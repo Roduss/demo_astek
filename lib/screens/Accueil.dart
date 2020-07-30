@@ -17,11 +17,17 @@ import 'Help.dart';
 import 'Settings.dart';
 
 ///TODO :
-///Check qu'il y ait pas une pb avec les boucles for dans le service, car ça s'éxécute toujours
-///plusieurs fois, bizarre, meme si ça marche
-///Check pour utiliser avec écran éteint aussi.
+///Faire la recherche dans la BDD pour tester si la fonction marche
+///A RECHECK du coup parce que ça fonctionne pas ;)
+///
+///Check pour utiliser avec écran éteint.
+///Le Streambuilder s'éxécute toujours plusieurs fois,
+///Il donne parfois des paramètres random au T2S, mais
+///Avant de parler il récupère les bons, le programme est donc fonctionnel
+///Mais peut encore etre amélioré !
 ///
 /// Page d'Accueil de l'application
+/// Il faudra empecher le retour sur la page d'accueil quand on se déconnecte du Nordic.
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -68,7 +74,7 @@ class _Accueil_State extends State<Accueil> {
 
   String _val;
 
-
+  DatabaseHelper databaseHelper = DatabaseHelper();
 
   String _newVoiceText;
 
@@ -269,27 +275,34 @@ class _Accueil_State extends State<Accueil> {
                         ///Car le streambuilder recevait les données plusieurs fois d'affilées - donc affihage de plusieurs snackbars
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           _scaffoldKey.currentState.showSnackBar(
-                            SnackBar( content:
+                            SnackBar(
+                              duration: Duration(seconds: 15),
+                                content:
                             Center(
 
                                 child: Text(((){
                                   String _newcode = "";
+                                  String _productname = "";
                                   _val = value.toString();
 
                                   String res = "";
                                   int _code = 0;
                                   print("Val de la longueur de val: ${_val.length}");
                                   if (_val.length > 2) {
-                                    for (int i = 0; i < _val.length / 4; i++) {
+                                    for (int i = 0; i < _val.length / 4-1; i++) {
                                       //print("Val $i : ${value[i]}");
                                       _code = value[i] - 48;
 
                                       _newcode = _newcode + _code.toString();
                                     }
-                                    print("Equivalent ds code : $_newcode");
+
                                   }
+                                  //_productname = await databaseHelper.getOneAliment(_newcode);
+                                  //Regarder pour print un contenu dynamique peut etre ? Ou caster la fonction dans
+                                  //Le database helper pour qu'elle renvoie un string.
                                   res = "Code barre reçu : " + _newcode;
                                   _onChange(res);
+
                                   return res;
 
                                 })())

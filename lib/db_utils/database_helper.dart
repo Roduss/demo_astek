@@ -101,10 +101,11 @@ Future<int> deleteAll() async {
 }
 
 //Fonction pour récupérer un aliment lors de la recherche future.
-  Future<List<Map<String, dynamic>>> getOneAliment(String barcode) async {
+  //A modifier pour que ça retourne qu'un seul aliment ! La requete est peut etre pas bonne, a voir.
+  Future<List<dynamic>> getOneAliment(String barcode) async { // a voir si besoin de faire une "Map List" plutot
 
     var db=await this.database;
-    var prod_name = await db.rawQuery('SELECT $colName FROM $alimentTable WHERE $colCode =$barcode ');
+    List<Map<String, dynamic>> prod_name = await db.rawQuery('SELECT $colName FROM $alimentTable WHERE $colCode =$barcode');
     return prod_name;
   }
 
