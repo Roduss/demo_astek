@@ -17,10 +17,11 @@ import 'Help.dart';
 import 'Settings.dart';
 
 ///TODO :
-///Faire la recherche dans la BDD pour tester si la fonction marche
-///A RECHECK du coup parce que ça fonctionne pas ;)
-///
+///Verifier bon fonctionnement T2speech et recherche BDD
 ///Check pour utiliser avec écran éteint.
+///
+///
+///
 ///Le Streambuilder s'éxécute toujours plusieurs fois,
 ///Il donne parfois des paramètres random au T2S, mais
 ///Avant de parler il récupère les bons, le programme est donc fonctionnel
@@ -52,11 +53,14 @@ class Accueil extends StatefulWidget {
   }
 }
 
+
 class _Accueil_State extends State<Accueil> {
 
   //Déclaration des variables
   final BluetoothDevice device;
   final BluetoothCharacteristic characteristic;
+
+  final mylistener = ValueNotifier(0);
 
   List<BluetoothService> services;
 
@@ -70,6 +74,9 @@ class _Accueil_State extends State<Accueil> {
 
   int _buildWidget = 0;
   bool _isnotifset = false;
+  String _productname = "";
+  bool isLoading = false;
+  String _newcode = "";
 
 
   String _val;
@@ -105,7 +112,7 @@ class _Accueil_State extends State<Accueil> {
   initState() {
     super.initState();
     _get_shared();
-
+    mylistener.addListener(changesOnName);
 
     initTts();
     print("value volume init : $volume , $rate, $pitch");
@@ -166,7 +173,36 @@ class _Accueil_State extends State<Accueil> {
     print("We saved : $to_save");
   }
 
+  changesOnName() async{
+    await _searchproduct(_newcode);
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+      //if(isLoading == true) {
+        _scaffoldKey.currentState.showSnackBar(
+
+          SnackBar(
+              duration: Duration(seconds: 10),
+              content:
+              Center(
+
+                child: Text(
+                    "Nom produit : $_productname"),
+
+
+              )
+          ),
+
+
+        );
+        _onChange(_productname);
+        //isLoading = false;
+      //}
+      setState(() {
+
+      });
+    });
+  }
   //Permet d'utiliser les hauts parleurs du smartphone
   Future _speak() async {
 
@@ -230,6 +266,12 @@ class _Accueil_State extends State<Accueil> {
   ///Bluetooth part
   ///
 
+  Future _searchproduct(String code) async {
+    _productname = await databaseHelper.getOneAliment(code);
+    print("We set the name to the product : $_productname");
+    isLoading = true;
+  }
+
   List<ButtonTheme> _buildReadWriteNotifyButton(
       BluetoothCharacteristic characteristic) {
     List<ButtonTheme> buttons = new List<ButtonTheme>();
@@ -273,47 +315,32 @@ class _Accueil_State extends State<Accueil> {
                       final value = snapshot.data;
                       if(snapshot.hasData && value.toString().length >2 && value.toString()!=_val){ //Permet de n'avoir l'affichage code-barre qu'une fois
                         ///Car le streambuilder recevait les données plusieurs fois d'affilées - donc affihage de plusieurs snackbars
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _scaffoldKey.currentState.showSnackBar(
-                            SnackBar(
-                              duration: Duration(seconds: 15),
-                                content:
-                            Center(
-
-                                child: Text(((){
-                                  String _newcode = "";
-                                  String _productname = "";
-                                  _val = value.toString();
-
-                                  String res = "";
-                                  int _code = 0;
-                                  print("Val de la longueur de val: ${_val.length}");
-                                  if (_val.length > 2) {
-                                    for (int i = 0; i < _val.length / 4-1; i++) {
-                                      //print("Val $i : ${value[i]}");
-                                      _code = value[i] - 48;
-
-                                      _newcode = _newcode + _code.toString();
-                                    }
-
-                                  }
-                                  //_productname = await databaseHelper.getOneAliment(_newcode);
-                                  //Regarder pour print un contenu dynamique peut etre ? Ou caster la fonction dans
-                                  //Le database helper pour qu'elle renvoie un string.
-                                  res = "Code barre reçu : " + _newcode;
-                                  _onChange(res);
-
-                                  return res;
-
-                                })())
-
-                                  ,
+                          print("ON CHARGE");
+                          Text((() {
 
 
-                            )
-                        ),
-                          );
-                       });
+                            _val = value.toString();
+
+                            String res = "";
+                            int _code = 0;
+                            print("Val de la longueur de val: ${_val.length}");
+                            if (_val.length > 2) {
+                              for (int i = 0; i < _val.length / 4-1; i++) {
+                                //print("Val $i : ${value[i]}");
+                                _code = value[i] - 48;
+
+                                _newcode = _newcode + _code.toString();
+                              }
+                              mylistener.notifyListeners(); //Permet de chercher les occurences dans la BDD puis de parler.
+                              print("NOTIFIE");
+                            }
+
+                            res = "code barre : " + _newcode;
+                            return res;
+
+                          })());
+
+
                       }
                       return Container();
 
@@ -332,6 +359,8 @@ class _Accueil_State extends State<Accueil> {
                   ),
 
                   Divider(),
+
+
                 ],
               ),
             ),
@@ -361,6 +390,8 @@ class _Accueil_State extends State<Accueil> {
   }
 
 
+
+
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
@@ -372,7 +403,23 @@ class _Accueil_State extends State<Accueil> {
           "Bonjour",
         ),
         actions: <Widget>[
-          Image.asset('images/logo_astek.png'),
+        RaisedButton(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(7),
+              side: BorderSide(color: Colors.black)),
+        color: Colors.amber[800],
+        child: Text('DECONNECTER'),
+        onPressed: () {
+          device.disconnect();
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (BuildContext context) => FindDevicesScreen(
+
+              )));
+
+        },
+
+      ),
+         // Image.asset('images/logo_astek.png'),
         ],
         leading: Builder(
           builder: (BuildContext context) {
@@ -476,19 +523,30 @@ class _Accueil_State extends State<Accueil> {
                   ),
                 ),
               ),
+
               ButtonTheme(
                 height: SizeConfig.blockSizeVertical * 10,
                 minWidth: SizeConfig.blockSizeHorizontal * 90,
-                child: RaisedButton(
+
+                child:
+                                RaisedButton(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                       side: BorderSide(color: Colors.black)),
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
+                    if(BluetoothDeviceState.disconnected == true){
+                        Navigator.of(context).push(MaterialPageRoute(
                         builder: (BuildContext context) => FindDevicesScreen(
 
-                            )));
-                  },
+                        )));
+    }
+                      else{
+                        _showSnackBar(context,"Vous etes déja connecté, veuillez vous déconnecter d'abord");
+                    }
+                    },
+
+
+
                   child: Text(
                     "Apparairage récepteur",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
@@ -506,10 +564,7 @@ class _Accueil_State extends State<Accueil> {
 
   void _showSnackBar(BuildContext context, String message) {
     final snackBar = SnackBar(content: Text(message),
-    action: SnackBarAction(
-      label: "Connecté à ${device.name}",
-      onPressed: null,
-    ),);
+    );
     _scaffoldKey.currentState.showSnackBar(snackBar);
   }
 }

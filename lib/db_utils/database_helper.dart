@@ -71,7 +71,7 @@ Future<List<Map<String, dynamic>>> getAlimMapList() async{
     var result = await db.rawQuery('SELECT * FROM $alimentTable order by $colName ASC');
     return result;
     //Result est un future de list of map car DB de différents styles (d'ou dynamic)
-  //On le convertira en liste d'aliments plus tard, pour l'instant on a une liste de Map du coup.
+  ///On le convertira en liste d'aliments plus tard, pour l'instant on a une liste de Map du coup.
 }
 
 
@@ -102,11 +102,20 @@ Future<int> deleteAll() async {
 
 //Fonction pour récupérer un aliment lors de la recherche future.
   //A modifier pour que ça retourne qu'un seul aliment ! La requete est peut etre pas bonne, a voir.
-  Future<List<dynamic>> getOneAliment(String barcode) async { // a voir si besoin de faire une "Map List" plutot
-
+  Future<String> getOneAliment(String barcode) async { // a voir si besoin de faire une "Map List" plutot
+    String _namefound;
     var db=await this.database;
-    List<Map<String, dynamic>> prod_name = await db.rawQuery('SELECT $colName FROM $alimentTable WHERE $colCode =$barcode');
-    return prod_name;
+    List<Map<String,dynamic>> prodmaplist = await db.rawQuery('SELECT $colName FROM $alimentTable WHERE $colCode =$barcode');
+    int count = prodmaplist.length;
+    List<Aliment> mylist = List<Aliment>();
+
+    for(int i=0;i< count; i++){
+      mylist.add(Aliment.fromMapObject(prodmaplist[i]));
+      _namefound = mylist[i].name;
+      print("name found : $_namefound");
+    }
+
+    return _namefound;
   }
 
 

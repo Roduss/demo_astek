@@ -82,6 +82,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
     return Scaffold(
       appBar: AppBar(
         title: Text('Conect to Devices'),
+        leading: Container(),
       ),
       body: RefreshIndicator(
         onRefresh: () =>
@@ -112,13 +113,16 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
                         if (snapshot.data ==
                             BluetoothDeviceState.connected) {
                           return RaisedButton(
-                            child: Text('DISCONNECT'),
-                            onPressed: () {
-                              d.disconnect();
-                              FlutterBlue.instance.startScan(timeout: Duration(seconds: 2));
-                            },
+                          child: Text('DECONNECTER'),
+                        onPressed: () {
+                        d.disconnect();
+                        FlutterBlue.instance.startScan(timeout: Duration(seconds: 2));
+                        },
 
-                          );
+                        );
+
+
+
                         }
 
 
