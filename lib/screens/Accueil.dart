@@ -320,22 +320,42 @@ class _Accueil_State extends State<Accueil> {
 
 
                             _val = value.toString();
-
+                            var _mytab = List(20); //De 0 a 18
+                            ///IL FAUT CHANGER LA TAILLE DE CETTE VARIABLE LORSQUE L'ON VOUDRA METTRE UN CODE BARRE COMPLET
+                            ///
                             String res = "";
                             int _code = 0;
-                            print("Val de la longueur de val: ${_val.length}");
+                            int j = 0;
+                            print("Val de la longueur de val: ${_val.length/4-1}");
                             if (_val.length > 2) {
                               for (int i = 0; i < _val.length / 4-1; i++) {
-                                //print("Val $i : ${value[i]}");
-                                _code = value[i] - 48;
 
-                                _newcode = _newcode + _code.toString();
+                                _mytab[i] = value[i];
+                                if(i%4 == 3 && i !=0){ //Si on a un multiple de 4, on repasse en binaire
+                                  print("val code manquante : ${_mytab[i]}");
+                                  _code = _mytab[i-3]*8+_mytab[i-2]*4+_mytab[i-1]*2+_mytab[i];
+                                  if(_code<10){
+                                    _newcode = _newcode + _code.toString();
+                                  }
+                                  else{
+                                    print("Erreur, nombre au dessus de 10, on ne l'ajoute paaas");
+
+                                  }
+                                  print("Code du $i chiffre : $_code");
+
+                                }
+                                else{
+                                  print("on a que $i chiffres, val mytab : ${_mytab[i]} \n");
+                                }
+
                               }
                               mylistener.notifyListeners(); //Permet de chercher les occurences dans la BDD puis de parler.
                               print("NOTIFIE");
                             }
 
                             res = "code barre : " + _newcode;
+                            _newcode="";
+                            print(res);
                             return res;
 
                           })());
