@@ -20,6 +20,7 @@ import 'Settings.dart';
 ///Verifier bon fonctionnement T2speech et recherche BDD
 ///Check pour utiliser avec écran éteint.
 ///
+///VERIFIER QUE LA CONDITION AJOUTEE SUR ONCHANGEDNAME FONCTIONNE
 ///
 ///
 ///Le Streambuilder s'éxécute toujours plusieurs fois,
@@ -27,8 +28,9 @@ import 'Settings.dart';
 ///Avant de parler il récupère les bons, le programme est donc fonctionnel
 ///Mais peut encore etre amélioré !
 ///
-/// Page d'Accueil de l'application
-/// Il faudra empecher le retour sur la page d'accueil quand on se déconnecte du Nordic.
+///
+/// Tester si les 0 avant empechent la recherche dans la BDD ou pas
+/// Tu vas pouvoir enlever les isLoading je pense.
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -178,7 +180,7 @@ class _Accueil_State extends State<Accueil> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
 
-      //if(isLoading == true) {
+      if(_productname != null) {
         _scaffoldKey.currentState.showSnackBar(
 
           SnackBar(
@@ -197,7 +199,7 @@ class _Accueil_State extends State<Accueil> {
         );
         _onChange(_productname);
         //isLoading = false;
-      //}
+      }
       setState(() {
 
       });
@@ -331,9 +333,9 @@ class _Accueil_State extends State<Accueil> {
                               for (int i = 0; i < _val.length / 4-1; i++) {
 
                                 _mytab[i] = value[i];
-                                if(i%4 == 3 && i !=0){ //Si on a un multiple de 4, on repasse en binaire
+                                if(i%4 == 3){ //Si on a un multiple de 4, on repasse en binaire
                                   print("val code manquante : ${_mytab[i]}");
-                                  _code = _mytab[i-3]*8+_mytab[i-2]*4+_mytab[i-1]*2+_mytab[i];
+                                  _code = _mytab[i-3]*8+_mytab[i-2]*4+_mytab[i-1]*2+_mytab[i]; //Passage en décimal
                                   if(_code<10){
                                     _newcode = _newcode + _code.toString();
                                   }
@@ -349,6 +351,8 @@ class _Accueil_State extends State<Accueil> {
                                 }
 
                               }
+                              ///Peut etre faire un traitement pour enlever les 0 devant un mot ici
+                              ///
                               mylistener.notifyListeners(); //Permet de chercher les occurences dans la BDD puis de parler.
                               print("NOTIFIE");
                             }

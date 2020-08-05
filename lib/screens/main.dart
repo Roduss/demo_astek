@@ -62,19 +62,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
     bool isHere = false;
     ScanResult r;
     FlutterBlue.instance.startScan(timeout: Duration(seconds: 2));
-    /*var subscription = FlutterBlue.instance.scanResults.listen((results) {
-      for(r in results){
-        if(r.device.name ==('Nordic_UART')){
-          isHere=true;
-
-        }
-      }
-      if(isHere == true){
-        /// r.device.connect(); Pas fou parce qu'il essaie de se connecer à tous
-        ///Les devices dispos !
-        print("Connected to nordic from init");
-      }
-    });*/
+ 
   }
 
   @override
