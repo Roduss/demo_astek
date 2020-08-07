@@ -31,6 +31,8 @@ import 'Settings.dart';
 ///
 /// Tester si les 0 avant empechent la recherche dans la BDD ou pas
 /// Tu vas pouvoir enlever les isLoading je pense.
+///
+/// Ajouter T2speech pour produit non trouvé
 
 enum TtsState { playing, stopped, paused, continued }
 
@@ -79,6 +81,8 @@ class _Accueil_State extends State<Accueil> {
   String _productname = "";
   bool isLoading = false;
   String _newcode = "";
+  String _finalcode = "";
+  bool isRemoved = false;
 
 
   String _val;
@@ -176,7 +180,12 @@ class _Accueil_State extends State<Accueil> {
   }
 
   changesOnName() async{
-    await _searchproduct(_newcode);
+    if(_finalcode != 'error'){
+      await _searchproduct(_finalcode);
+    }
+    else{
+      _productname = null;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
 
@@ -199,6 +208,18 @@ class _Accueil_State extends State<Accueil> {
         );
         _onChange(_productname);
         //isLoading = false;
+      }
+      else{
+        _scaffoldKey.currentState.showSnackBar(
+          SnackBar(
+            duration: Duration(seconds : 5),
+            content: Center(
+              child: Text(
+                "produit non trouvé !"
+              ),
+            ),
+          )
+        );
       }
       setState(() {
 
@@ -322,18 +343,20 @@ class _Accueil_State extends State<Accueil> {
 
 
                             _val = value.toString();
-                            var _mytab = List(20); //De 0 a 18
+                            var _mytab = List(58); //De 0 a 18
                             ///IL FAUT CHANGER LA TAILLE DE CETTE VARIABLE LORSQUE L'ON VOUDRA METTRE UN CODE BARRE COMPLET
                             ///
                             String res = "";
                             int _code = 0;
                             int j = 0;
-                            print("Val de la longueur de val: ${_val.length/4-1}");
+                            int err = 0;
+                            isRemoved = false;
+                            print("Val de la longueur de val: ${_val.length}");
                             if (_val.length > 2) {
-                              for (int i = 0; i < _val.length / 4-1; i++) {
+                              for (int i = 1; i < _val.length/3-1; i++) { //On commence a 1 pour ne pas prendre le premier bit de start
 
                                 _mytab[i] = value[i];
-                                if(i%4 == 3){ //Si on a un multiple de 4, on repasse en binaire
+                                if(i%4 == 0){ //Si on a un multiple de 4, on transforme en décimal
                                   print("val code manquante : ${_mytab[i]}");
                                   _code = _mytab[i-3]*8+_mytab[i-2]*4+_mytab[i-1]*2+_mytab[i]; //Passage en décimal
                                   if(_code<10){
@@ -341,7 +364,7 @@ class _Accueil_State extends State<Accueil> {
                                   }
                                   else{
                                     print("Erreur, nombre au dessus de 10, on ne l'ajoute paaas");
-
+                                    err = 1;
                                   }
                                   print("Code du $i chiffre : $_code");
 
@@ -352,13 +375,33 @@ class _Accueil_State extends State<Accueil> {
 
                               }
                               ///Peut etre faire un traitement pour enlever les 0 devant un mot ici
-                              ///
+                              if(err == 0 ){
+                                for(j = 0; j<_newcode.length;j++){
+                                  if(_newcode[j] == '0'){
+                                    print("Zéro enlevé !");
+                                    continue;
+                                  }
+                                  else{
+                                    _finalcode = _finalcode + _newcode[j];
+
+                                  }
+                                }
+                              }
+                              else{
+                                print("Code barre erroné");
+                                _finalcode = 'error';
+                              }
+
+                              print("Le final code est donc : $_finalcode");
                               mylistener.notifyListeners(); //Permet de chercher les occurences dans la BDD puis de parler.
                               print("NOTIFIE");
                             }
 
-                            res = "code barre : " + _newcode;
+                            res = "code barre : " + _finalcode;
                             _newcode="";
+                            _finalcode = "";
+                            err = 0;
+                            _mytab = [0];
                             print(res);
                             return res;
 
