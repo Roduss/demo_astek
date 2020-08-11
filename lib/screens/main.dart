@@ -210,8 +210,8 @@ class BluetoothOffScreenState extends State<BluetoothOffScreen>{
               size: 200.0,
               color: Colors.white54,
             ),
-            Text(
-              'Bluetooth Adapter is ${state != null ? state.toString().substring(15) : 'not available'}.',
+            Text("Bluetooth non actif",
+              //'Bluetooth Adapter is ${state != null ? state.toString().substring(15) : 'not available'}.',
               style: Theme.of(context)
                   .primaryTextTheme
                   .subhead
