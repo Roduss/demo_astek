@@ -1,3 +1,4 @@
+import 'package:demo_astek/screens/Settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -13,27 +14,31 @@ import './../db_utils/database_helper.dart';
 import './../db_utils/aliment.dart';
 
 import 'package:sqflite/sqflite.dart';
-
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 
 ///Permet d'afficher la liste des aliments
 
 class DBList extends StatefulWidget {
-  DBList({Key key, this.title}) : super(key: key);
-
+  DBList({Key key, this.title, this.services, this.device}) : super(key: key);
+  List<BluetoothService> services;
   final String title;
+  BluetoothDevice device;
 
   @override
-  _DBList_State createState() => _DBList_State(this.title);
+  _DBList_State createState() => _DBList_State(this.title,this.services, this.device);
 }
 
 
 class _DBList_State extends State<DBList> {
+  List<BluetoothService> services;
+  BluetoothDevice device;
   DatabaseHelper databaseHelper = DatabaseHelper();
   int count = 0;
   List<Aliment> foodList;
   Aliment aliment;
   String title;
-  _DBList_State(this.title);
+  _DBList_State(this.title, this.services, this.device);
 
   var _scaffoldKey = new GlobalKey<ScaffoldState>();
 
@@ -51,6 +56,17 @@ class _DBList_State extends State<DBList> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(title,),
+        leading: Builder(
+          builder: (BuildContext context){
+            return IconButton(
+              icon : const Icon(Icons.subdirectory_arrow_left),
+              onPressed: (){
+                Navigator.push(context, MaterialPageRoute(builder:(context)=> Settings(services: services, device: device, title: "Paramètres"
+                  ,)));
+              },
+            );
+          },
+        ),
       ),
       body: getListView(),
         floatingActionButton: FloatingActionButton(

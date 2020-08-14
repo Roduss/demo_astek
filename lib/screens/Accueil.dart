@@ -3,16 +3,10 @@ import 'package:flutter_blue/flutter_blue.dart';
 import 'main.dart';
 import './../size_config.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-import 'package:csv/csv.dart';
 import 'dart:async' show Future;
-import 'package:flutter/services.dart' show rootBundle;
 import './../db_utils/database_helper.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:sqflite/sqflite.dart';
-
 import 'Help.dart';
 import 'Settings.dart';
 
@@ -22,14 +16,13 @@ import 'Settings.dart';
 ///
 ///VERIFIER QUE LA CONDITION AJOUTEE SUR ONCHANGEDNAME FONCTIONNE
 ///
+/// Enlever tous ces warnings
 ///
 ///Le Streambuilder s'éxécute toujours plusieurs fois,
 ///Il donne parfois des paramètres random au T2S, mais
 ///Avant de parler il récupère les bons, le programme est donc fonctionnel
 ///Mais peut encore etre amélioré !
 ///
-///
-/// Tester si les 0 avant empechent la recherche dans la BDD ou pas
 /// Tu vas pouvoir enlever les isLoading je pense.
 ///
 /// Ajouter T2speech pour produit non trouvé
@@ -37,12 +30,12 @@ import 'Settings.dart';
 enum TtsState { playing, stopped, paused, continued }
 
 class Accueil extends StatefulWidget {
-  double volume ;
-  double pitch;
-  double rate;
-  String language;
+  final double volume ;
+  final double pitch;
+  final double rate;
+  final String language;
 
-  BluetoothDevice device;
+  final BluetoothDevice device;
   final BluetoothCharacteristic characteristic;
   final List<BluetoothService> services;
 
@@ -61,7 +54,7 @@ class Accueil extends StatefulWidget {
 class _Accueil_State extends State<Accueil> {
 
   //Déclaration des variables
-  final BluetoothDevice device;
+  BluetoothDevice device;
   final BluetoothCharacteristic characteristic;
 
   final mylistener = ValueNotifier(0);
@@ -117,6 +110,7 @@ class _Accueil_State extends State<Accueil> {
   @override
   initState() {
     super.initState();
+
     _get_shared();
     mylistener.addListener(changesOnName);
 
@@ -135,10 +129,7 @@ class _Accueil_State extends State<Accueil> {
 
     _getLanguages();
   }
-  Future<String> _getdeviceState() async{
-    String _state = await device.state.toString();
-    return _state;
-  }
+
 
   Future _getLanguages() async {
     languages = await flutterTts.getLanguages;
@@ -338,61 +329,36 @@ class _Accueil_State extends State<Accueil> {
                       final value = snapshot.data;
                       if(snapshot.hasData && value.toString().length >2 && value.toString()!=_val){ //Permet de n'avoir l'affichage code-barre qu'une fois
                         ///Car le streambuilder recevait les données plusieurs fois d'affilées - donc affihage de plusieurs snackbars
-                          print("ON CHARGE");
+
                           Text((() {
 
 
                             _val = value.toString();
-                            var _mytab = List(58); //De 0 a 18
+                            var _mytab = List(50); //De 0 a 14
                             ///IL FAUT CHANGER LA TAILLE DE CETTE VARIABLE LORSQUE L'ON VOUDRA METTRE UN CODE BARRE COMPLET
                             ///
                             String res = "";
                             int _code = 0;
-                            int j = 0;
+                            int i = 0;
                             int err = 0;
                             isRemoved = false;
                             print("Val de la longueur de val: ${_val.length}");
+                            print(value.toString());
                             if (_val.length > 2) {
-                              for (int i = 1; i < _val.length/3-1; i++) { //On commence a 1 pour ne pas prendre le premier bit de start
+                              while(value[i] != 10 && i < 14){
 
-                                _mytab[i] = value[i];
-                                if(i%4 == 0){ //Si on a un multiple de 4, on transforme en décimal
-                                  print("val code manquante : ${_mytab[i]}");
-                                  _code = _mytab[i-3]*8+_mytab[i-2]*4+_mytab[i-1]*2+_mytab[i]; //Passage en décimal
-                                  if(_code<10){
-                                    _newcode = _newcode + _code.toString();
-                                  }
-                                  else{
-                                    print("Erreur, nombre au dessus de 10, on ne l'ajoute paaas");
-                                    err = 1;
-                                  }
-                                  print("Code du $i chiffre : $_code");
-
-                                }
-                                else{
-                                  print("on a que $i chiffres, val mytab : ${_mytab[i]} \n");
-                                }
+                                _mytab[i] = value[i] -48;
+                                _newcode = _newcode + _mytab[i].toString();
+                                i++;
 
                               }
-                              ///Peut etre faire un traitement pour enlever les 0 devant un mot ici
-                              if(err == 0 ){
-                                for(j = 0; j<_newcode.length;j++){
-                                  if(_newcode[j] == '0'){
-                                    print("Zéro enlevé !");
-                                    continue;
-                                  }
-                                  else{
-                                    _finalcode = _finalcode + _newcode[j];
 
-                                  }
-                                }
-                              }
-                              else{
-                                print("Code barre erroné");
-                                _finalcode = 'error';
-                              }
+                              print("Newcode : $_newcode");
 
-                              print("Le final code est donc : $_finalcode");
+
+                                _finalcode=_newcode;
+
+                              //print("Le final code est donc : $_finalcode");
                               mylistener.notifyListeners(); //Permet de chercher les occurences dans la BDD puis de parler.
                               print("NOTIFIE");
                             }
@@ -476,8 +442,8 @@ class _Accueil_State extends State<Accueil> {
               side: BorderSide(color: Colors.black)),
         color: Colors.amber[800],
         child: Text('DECONNECTER'),
-        onPressed: () {
-          device.disconnect();
+        onPressed: () async {
+          await device.disconnect();
           Navigator.of(context).push(MaterialPageRoute(
               builder: (BuildContext context) => FindDevicesScreen(
 
@@ -495,7 +461,7 @@ class _Accueil_State extends State<Accueil> {
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (BuildContext context) =>
-                        Help(title: "Page d'aide")));
+                        Help(services : services, device: device, title: "Page d'aide")));
               },
             );
           },
@@ -585,7 +551,7 @@ class _Accueil_State extends State<Accueil> {
                     onPressed: () {
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (BuildContext context) =>
-                              Settings(title: "Paramètres", volume: volume, pitch: pitch, rate: rate, services: services,)));
+                              Settings(title: "Paramètres", volume: volume, pitch: pitch, rate: rate, services: services,device: device,)));
                     },
                   ),
                 ),

@@ -8,10 +8,7 @@ class ScanResultTile extends StatelessWidget {
   final ScanResult result;
   final VoidCallback onTap;
 
-  @override
-  void initState(){
 
-  }
 
   Widget _buildTitle(BuildContext context) {
     if (result.device.name.length > 0) {
@@ -19,9 +16,11 @@ class ScanResultTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+
           Text(
             result.device.name,
             overflow: TextOverflow.ellipsis,
+
           ),
           Text(
             result.device.id.toString(),
@@ -33,6 +32,10 @@ class ScanResultTile extends StatelessWidget {
       return Text(result.device.id.toString());
     }
   }
+
+  ///Si besoin, cette fonction permet d'ajouter des données sur chaque
+  ///Résultat lors du scan (ex UUID et autres
+  ///Pour les réutiliser, voir l'exemple bluetooth sur mon github.
 
   Widget _buildAdvRow(BuildContext context, String title, String value) {
     return Padding(
@@ -93,31 +96,12 @@ class ScanResultTile extends StatelessWidget {
       title: _buildTitle(context),
       leading: Text(result.rssi.toString()),
       trailing: RaisedButton(
-        child: Text('CONNECT'), //Ecran de connexion lorsque le bluetoth est activé avec localisation
+        child: Text('CONNEXION'), //Ecran de connexion lorsque le bluetoth est activé avec localisation
         color: Colors.black,
         textColor: Colors.white,
         onPressed: (result.advertisementData.connectable) ? onTap : null, //Permet de savoir les devices connectables ou non
       ),
-      children: <Widget>[
-        _buildAdvRow(
-            context, 'Complete Local Name', result.advertisementData.localName),
-        _buildAdvRow(context, 'Tx Power Level',
-            '${result.advertisementData.txPowerLevel ?? 'N/A'}'),
-        _buildAdvRow(
-            context,
-            'Manufacturer Data',
-            getNiceManufacturerData(
-                result.advertisementData.manufacturerData) ??
-                'N/A'),
-        _buildAdvRow(
-            context,
-            'Service UUIDs',
-            (result.advertisementData.serviceUuids.isNotEmpty)
-                ? result.advertisementData.serviceUuids.join(', ').toUpperCase()
-                : 'N/A'),
-        _buildAdvRow(context, 'Service Data',
-            getNiceServiceData(result.advertisementData.serviceData) ?? 'N/A'),
-      ],
+
     );
   }
 }

@@ -1,7 +1,10 @@
+import 'package:demo_astek/screens/Accueil.dart';
+
 import 'main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import './Accueil.dart';
 
 import './../size_config.dart';
 import 'package:flutter_blue/flutter_blue.dart';
@@ -11,17 +14,19 @@ import 'package:flutter_blue/flutter_blue.dart';
 ///PAge d'aide
 ///
 class Help extends StatefulWidget {
-  Help({this.services, Key key, this.title}) : super(key: key);
+  BluetoothDevice device;
+  Help({this.services, this.device, Key key, this.title}) : super(key: key);
   List<BluetoothService> services;
   final String title;
 
   @override
-  _Help_State createState() => _Help_State(this.services);
+  _Help_State createState() => _Help_State(this.services, this.device);
 }
 
 class _Help_State extends State<Help>{
   List<BluetoothService> services;
-  _Help_State(this.services);
+  BluetoothDevice device;
+  _Help_State(this.services, this.device);
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +37,17 @@ class _Help_State extends State<Help>{
         title : Text(
           widget.title,
         ),
+          leading: Builder(
+            builder: (BuildContext context){
+              return IconButton(
+                icon : const Icon(Icons.subdirectory_arrow_left),
+                onPressed: (){
+
+                  Navigator.push(context, MaterialPageRoute(builder:(context)=> Accueil(services: services,device : device)));
+                },
+              );
+            },
+          ),
 
       ),
       body: ListView(

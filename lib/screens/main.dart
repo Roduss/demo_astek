@@ -69,8 +69,10 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Conect to Devices'),
-        leading: Container(),
+        title: Text('Connexion au récepteur'),
+        leading: CircleAvatar(
+          backgroundImage: AssetImage('images/logo_astek.png'),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () =>
@@ -223,8 +225,6 @@ class BluetoothOffScreenState extends State<BluetoothOffScreen>{
     );
   }
 }
-
-///Deprecated
 
 ///Redirection vers la page d'appairage automatique
 

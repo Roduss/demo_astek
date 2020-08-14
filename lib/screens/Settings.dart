@@ -35,20 +35,21 @@ class Settings extends StatefulWidget {
   double rate ;
   String language;
   List<BluetoothService> services;
-  Settings({this.volume, this.pitch, this.rate, this.language,Key key, this.title, this.services}) : super(key: key);
+  BluetoothDevice device;
+  Settings({this.volume, this.pitch, this.rate, this.language,Key key, this.title, this.services, this.device}) : super(key: key);
 
   final String title;
 
   @override
   _Settings_State createState() {
-    return _Settings_State(this.volume, this.pitch, this.rate, this.language, this.services);
+    return _Settings_State(this.volume, this.pitch, this.rate, this.language, this.services, this.device);
   }
 }
 
 class _Settings_State extends State<Settings>{
 
   //Déclaration des variables
-
+  BluetoothDevice device;
   final _updatekey = GlobalKey<FormState>();
   var _currentItemSelected = 'Français';
   var _voices = ['Jeanne', 'Robert'];
@@ -88,7 +89,7 @@ class _Settings_State extends State<Settings>{
 
   TtsState ttsState = TtsState.stopped;
 
-  _Settings_State(this.volume, this.pitch, this.rate, this.language, this.services);
+  _Settings_State(this.volume, this.pitch, this.rate, this.language, this.services, this.device);
 
   get isPlaying => ttsState == TtsState.playing;
 
@@ -316,7 +317,7 @@ class _Settings_State extends State<Settings>{
               icon : const Icon(Icons.subdirectory_arrow_left),
               onPressed: (){
                 print("On envoie : volume : $volume, pitch : $pitch");
-                Navigator.push(context, MaterialPageRoute(builder:(context)=> Accueil(volume : volume,pitch : pitch,rate : rate,language : language, services: services,)));
+                Navigator.push(context, MaterialPageRoute(builder:(context)=> Accueil(volume : volume,pitch : pitch,rate : rate,language : language, services: services,device: device,)));
               },
             );
           },
@@ -717,7 +718,7 @@ class _Settings_State extends State<Settings>{
         label : "voir BDD",
       onPressed: (){
         Navigator.of(context).push(MaterialPageRoute(
-            builder: (BuildContext context) => DBList(title : "Contenu BDD")));
+            builder: (BuildContext context) => DBList(title : "Contenu BDD", services: services, device : device)));
       },
     ),);
     _scaffoldKey.currentState.showSnackBar(snackBar);
