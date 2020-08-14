@@ -1,9 +1,7 @@
 import 'package:demo_astek/screens/Accueil.dart';
 
-import 'main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:auto_size_text/auto_size_text.dart';
 import './Accueil.dart';
 
 import './../size_config.dart';
@@ -11,7 +9,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 
 
 
-///PAge d'aide
+///Page d'aide
 ///
 class Help extends StatefulWidget {
   BluetoothDevice device;
@@ -88,7 +86,9 @@ class _Help_State extends State<Help>{
               margin: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Text(
                "Allez sur la page 'Appairage', puis approchez simplement le récepteur du smartphone."
-                   "Vous sentirez une vibration lorsque l'appairage est effectué",
+                   "Vous sentirez une vibration lorsque l'appairage est effectué"
+                   "Assurez vous d'avoir le Bluetooth ET le GPS activé"
+                   "Sinon le Scan ne fonctionnera pas !",
                textAlign: TextAlign.justify,
                 style: TextStyle(
                   fontSize: 20,

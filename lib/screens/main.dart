@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'Accueil.dart';
-import 'Help.dart';
 import 'package:flutter/rendering.dart';
-import './../size_config.dart';
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import '../ble_utils/building_ble_services.dart';
 
@@ -59,8 +56,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
 
   @override
   void initState(){
-    bool isHere = false;
-    ScanResult r;
+    super.initState();
     FlutterBlue.instance.startScan(timeout: Duration(seconds: 2));
  
   }

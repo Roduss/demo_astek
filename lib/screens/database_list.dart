@@ -1,29 +1,22 @@
 import 'package:demo_astek/screens/Settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:auto_size_text/auto_size_text.dart';
-import 'main.dart';
-import './../size_config.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:csv/csv.dart';
 import 'dart:async' show Future;
-import 'package:flutter/services.dart' show rootBundle;
+
 import './../db_utils/database_helper.dart';
 import './../db_utils/aliment.dart';
 
-import 'package:sqflite/sqflite.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+
 import 'package:flutter_blue/flutter_blue.dart';
 
 ///Permet d'afficher la liste des aliments
 
 class DBList extends StatefulWidget {
   DBList({Key key, this.title, this.services, this.device}) : super(key: key);
-  List<BluetoothService> services;
+  final List<BluetoothService> services;
   final String title;
-  BluetoothDevice device;
+  final BluetoothDevice device;
 
   @override
   _DBList_State createState() => _DBList_State(this.title,this.services, this.device);
@@ -172,7 +165,7 @@ class _DBList_State extends State<DBList> {
   }
 
   updateListView() async {
-    final Database dbFuture = await databaseHelper.initializeDatabase();
+    await databaseHelper.initializeDatabase();
     List<Aliment> foodListFuture = await databaseHelper.getAlimentList();
     this.foodList = foodListFuture;
     this.count = foodListFuture.length;

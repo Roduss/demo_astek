@@ -2,7 +2,6 @@ import './Accueil.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'main.dart';
 import './../size_config.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,12 +12,6 @@ import 'dart:async' show Future;
 import 'package:flutter/services.dart' show rootBundle;
 import './../db_utils/database_helper.dart';
 import './../db_utils/aliment.dart';
-
-import 'package:sqflite/sqflite.dart';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
-
-import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 
@@ -30,12 +23,12 @@ enum TtsState { playing, stopped, paused, continued }
 
 
 class Settings extends StatefulWidget {
-  double volume ;
-  double pitch ;
-  double rate ;
-  String language;
-  List<BluetoothService> services;
-  BluetoothDevice device;
+  final double volume ;
+  final double pitch ;
+  final double rate ;
+  final String language;
+  final List<BluetoothService> services;
+  final BluetoothDevice device;
   Settings({this.volume, this.pitch, this.rate, this.language,Key key, this.title, this.services, this.device}) : super(key: key);
 
   final String title;
@@ -700,7 +693,7 @@ class _Settings_State extends State<Settings>{
   }
 
   updateListView() async { //Update la vue de l'interface
-    final Database dbFuture = await databaseHelper.initializeDatabase();
+    await databaseHelper.initializeDatabase();
     List<Aliment> foodListFuture = await databaseHelper.getAlimentList();
     this.foodList = foodListFuture;
     this.count = foodListFuture.length;

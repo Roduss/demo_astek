@@ -14,9 +14,6 @@ import 'Settings.dart';
 ///Verifier bon fonctionnement T2speech et recherche BDD
 ///Check pour utiliser avec écran éteint.
 ///
-///VERIFIER QUE LA CONDITION AJOUTEE SUR ONCHANGEDNAME FONCTIONNE
-///
-/// Enlever tous ces warnings
 ///
 ///Le Streambuilder s'éxécute toujours plusieurs fois,
 ///Il donne parfois des paramètres random au T2S, mais
@@ -25,12 +22,16 @@ import 'Settings.dart';
 ///
 /// Tu vas pouvoir enlever les isLoading je pense.
 ///
-/// Ajouter T2speech pour produit non trouvé
+/// Vérifier T2speech pour produit non trouvé
+///
+/// Pour le texte, il faudra faire une changement de couleur avec le pourcentage de batterie.
+///On pourra peut etre utiliser Fractionnaly sized box.
+///Faire parler au démarrage avec le pourcentage de batterie envoyé
 
 enum TtsState { playing, stopped, paused, continued }
 
 class Accueil extends StatefulWidget {
-  final double volume ;
+  final double volume;
   final double pitch;
   final double rate;
   final String language;
@@ -39,20 +40,24 @@ class Accueil extends StatefulWidget {
   final BluetoothCharacteristic characteristic;
   final List<BluetoothService> services;
 
-
-  Accueil({this.volume, this.pitch, this.rate, this.language, this.device, this.characteristic, this.services});
+  Accueil(
+      {this.volume,
+      this.pitch,
+      this.rate,
+      this.language,
+      this.device,
+      this.characteristic,
+      this.services});
 //On met des "named arguments" ici pour pouvoir les utiliser dans l'ordre qu'on veut
-
 
   @override
   _Accueil_State createState() {
-    return _Accueil_State(this.volume, this.pitch, this.rate, this.language, this.device,this.characteristic, this.services);
+    return _Accueil_State(this.volume, this.pitch, this.rate, this.language,
+        this.device, this.characteristic, this.services);
   }
 }
 
-
 class _Accueil_State extends State<Accueil> {
-
   //Déclaration des variables
   BluetoothDevice device;
   final BluetoothCharacteristic characteristic;
@@ -65,18 +70,13 @@ class _Accueil_State extends State<Accueil> {
   dynamic languages;
   String language;
   double volume;
-  double pitch ;
-  double rate ;
+  double pitch;
+  double rate;
   String mystate;
 
-  int _buildWidget = 0;
   bool _isnotifset = false;
   String _productname = "";
-  bool isLoading = false;
   String _newcode = "";
-  String _finalcode = "";
-  bool isRemoved = false;
-
 
   String _val;
 
@@ -88,13 +88,10 @@ class _Accueil_State extends State<Accueil> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-
-
   //Constructeur & getters
 
-  _Accueil_State(this.volume , this.pitch, this.rate, this.language, this.device,this.characteristic,this.services);
-
-
+  _Accueil_State(this.volume, this.pitch, this.rate, this.language, this.device,
+      this.characteristic, this.services);
 
   get isPlaying => ttsState == TtsState.playing;
 
@@ -103,9 +100,6 @@ class _Accueil_State extends State<Accueil> {
   get isPaused => ttsState == TtsState.paused;
 
   get isContinued => ttsState == TtsState.continued;
-
-
-
 
   @override
   initState() {
@@ -118,11 +112,6 @@ class _Accueil_State extends State<Accueil> {
     print("value volume init : $volume , $rate, $pitch");
   }
 
-
-
-
-
-
   //Permet de récupérer la liste des langages disponibles
   initTts() {
     flutterTts = FlutterTts();
@@ -130,96 +119,66 @@ class _Accueil_State extends State<Accueil> {
     _getLanguages();
   }
 
-
   Future _getLanguages() async {
     languages = await flutterTts.getLanguages;
     if (languages != null) setState(() => languages);
-
   }
 
-
-  Future <Null> _get_shared() async{
+  Future<Null> _get_shared() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     final key4 = 'volume';
     final key5 = 'pitch';
-    final key6 =  'rate';
+    final key6 = 'rate';
     final key7 = 'language';
-
 
     final value4 = prefs.getDouble(key4) ?? 0.5;
     final value5 = prefs.getDouble(key5) ?? 1;
     final value6 = prefs.getDouble(key6) ?? 0.5;
-    final value7 = prefs.getString(key7) ??'fr-FR';
-
+    final value7 = prefs.getString(key7) ?? 'fr-FR';
 
     setState(() {
       volume = value4;
       pitch = value5;
       rate = value6;
       language = value7;
-
     });
-    print("We got from shared : vol : $volume, , rate : $rate , pitch : $pitch");
+    print(
+        "We got from shared : vol : $volume, , rate : $rate , pitch : $pitch");
   }
 
-  _save_bool_to_shared(String key, var to_save ) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool(key, to_save);
-
-    print("We saved : $to_save");
-  }
-
-  changesOnName() async{
-    if(_finalcode != 'error'){
-      await _searchproduct(_finalcode);
-    }
-    else{
+  changesOnName() async {
+    if (_newcode != null) {
+      await _searchproduct(_newcode);
+    } else {
       _productname = null;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-
-      if(_productname != null) {
+      if (_productname != null) {
         _scaffoldKey.currentState.showSnackBar(
-
           SnackBar(
               duration: Duration(seconds: 10),
-              content:
-              Center(
-
-                child: Text(
-                    "Nom produit : $_productname"),
-
-
-              )
-          ),
-
-
+              content: Center(
+                child: Text("Nom produit : $_productname"),
+              )),
         );
         _onChange(_productname);
-        //isLoading = false;
+      } else {
+        _scaffoldKey.currentState.showSnackBar(SnackBar(
+          duration: Duration(seconds: 5),
+          content: Center(
+            child: Text("produit non trouvé !"),
+          ),
+        ));
+        _onChange("Produit non trouvé !");
       }
-      else{
-        _scaffoldKey.currentState.showSnackBar(
-          SnackBar(
-            duration: Duration(seconds : 5),
-            content: Center(
-              child: Text(
-                "produit non trouvé !"
-              ),
-            ),
-          )
-        );
-      }
-      setState(() {
-
-      });
+      setState(() {});
     });
   }
+
   //Permet d'utiliser les hauts parleurs du smartphone
   Future _speak() async {
-
     await flutterTts.setVolume(volume);
     await flutterTts.setSpeechRate(rate);
     await flutterTts.setPitch(pitch);
@@ -245,11 +204,11 @@ class _Accueil_State extends State<Accueil> {
     var result = await flutterTts.pause();
     if (result == 1) setState(() => ttsState = TtsState.paused);
   }
+
   @override
   void dispose() {
     super.dispose();
     flutterTts.stop();
-
   }
 
   List<DropdownMenuItem<String>> getLanguageDropDownMenuItems() {
@@ -268,8 +227,8 @@ class _Accueil_State extends State<Accueil> {
     });
   }
 
-  //Fonction a appeler pour le Text_To_Speech
-  //Elle prend en argument ce que l'on veut entendre
+  //Fonction a apeller pour utiliser Text_To_Speech
+
   void _onChange(String text) {
     setState(() {
       _newVoiceText = text;
@@ -278,140 +237,106 @@ class _Accueil_State extends State<Accueil> {
   }
 
   ///Bluetooth part
-  ///
 
   Future _searchproduct(String code) async {
     _productname = await databaseHelper.getOneAliment(code);
     print("We set the name to the product : $_productname");
-    isLoading = true;
   }
 
   List<ButtonTheme> _buildReadWriteNotifyButton(
       BluetoothCharacteristic characteristic) {
     List<ButtonTheme> buttons = new List<ButtonTheme>();
-  if(_isnotifset == false){
-    if (characteristic.properties.notify) {
-      characteristic.setNotifyValue(true);
-      print("notification listening");
-      _isnotifset = true;
+    if (_isnotifset == false) {
+      ///Permet d'activer les notifications automatiques
+      ///Transfert de données automatiques entre émetteur/receveur
+      if (characteristic.properties.notify) {
+        characteristic.setNotifyValue(true);
+        print("notification listening");
+        _isnotifset = true;
+      }
     }
-
-  }
-
 
     return buttons;
   }
 
-
-  ListView _buildConnectDeviceView()  {
+  ListView _buildConnectDeviceView() {
     List<Container> containers = new List<Container>();
 
-
-  //if(_buildWidget == 1){
-   // print("We are BUILDING SERVICES");
     for (BluetoothService service in services) {
       List<Widget> characteristicsWidget = new List<Widget>();
 
       for (BluetoothCharacteristic characteristic in service.characteristics) {
-        if(characteristic.properties.notify){
+        if (characteristic.properties.notify) {
           characteristicsWidget.add(
-
             Center(
-
               child: Column(
                 children: <Widget>[
-                  Align(alignment: Alignment.center,
-                  child: StreamBuilder<List<int>>(
-                    stream: characteristic.value,
-                    initialData: characteristic.lastValue,
-                    builder: (c, snapshot){
-
-                      final value = snapshot.data;
-                      if(snapshot.hasData && value.toString().length >2 && value.toString()!=_val){ //Permet de n'avoir l'affichage code-barre qu'une fois
-                        ///Car le streambuilder recevait les données plusieurs fois d'affilées - donc affihage de plusieurs snackbars
+                  Align(
+                    alignment: Alignment.center,
+                    child: StreamBuilder<List<int>>(
+                      stream: characteristic.value,
+                      initialData: characteristic.lastValue,
+                      builder: (c, snapshot) {
+                        final value = snapshot.data;
+                        if (snapshot.hasData &&
+                            value.toString().length > 2 &&
+                            value.toString() != _val) {
+                          ///Permet de n'avoir l'affichage code-barre qu'une fois
+                          ///Car le streambuilder recevait les données plusieurs fois d'affilées - donc affichage de plusieurs snackbars
 
                           Text((() {
-
-
                             _val = value.toString();
                             var _mytab = List(50); //De 0 a 14
-                            ///IL FAUT CHANGER LA TAILLE DE CETTE VARIABLE LORSQUE L'ON VOUDRA METTRE UN CODE BARRE COMPLET
-                            ///
+                            ///La Taille de mytab peut etre à modifier (mini : 14);
                             String res = "";
-                            int _code = 0;
+
                             int i = 0;
-                            int err = 0;
-                            isRemoved = false;
                             print("Val de la longueur de val: ${_val.length}");
                             print(value.toString());
                             if (_val.length > 2) {
-                              while(value[i] != 10 && i < 14){
-
-                                _mytab[i] = value[i] -48;
+                              while (value[i] != 10 && i < 14) {
+                                _mytab[i] = value[i] - 48;
                                 _newcode = _newcode + _mytab[i].toString();
                                 i++;
-
                               }
-
                               print("Newcode : $_newcode");
-
-
-                                _finalcode=_newcode;
-
-                              //print("Le final code est donc : $_finalcode");
-                              mylistener.notifyListeners(); //Permet de chercher les occurences dans la BDD puis de parler.
-                              print("NOTIFIE");
+                              mylistener.notifyListeners();
+                              //Permet de chercher les occurences dans la BDD quand le code barre est reçu,
+                              // puis de parler.
                             }
 
-                            res = "code barre : " + _finalcode;
-                            _newcode="";
-                            _finalcode = "";
-                            err = 0;
+                            res = "code barre : " + _newcode;
+                            _newcode = "";
+
                             _mytab = [0];
                             print(res);
                             return res;
-
                           })());
-
-
-                      }
-                      return Container();
-
-
-
-                    },
-                  ),
+                        }
+                        return Container();
+                      },
                     ),
-
-
+                  ),
                   Row(
                     children: <Widget>[
                       ..._buildReadWriteNotifyButton(characteristic),
-
                     ],
                   ),
-
                   Divider(),
-
-
                 ],
               ),
             ),
           );
         }
-
       }
       containers.add(
         Container(
             child: Column(
-              children: characteristicsWidget,
-            ) ),
-
+          children: characteristicsWidget,
+        )),
       );
     }
- // }
-
-
+    // }
 
     return ListView(
       shrinkWrap: true,
@@ -421,9 +346,6 @@ class _Accueil_State extends State<Accueil> {
       ],
     );
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -436,23 +358,19 @@ class _Accueil_State extends State<Accueil> {
           "Bonjour",
         ),
         actions: <Widget>[
-        RaisedButton(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(7),
-              side: BorderSide(color: Colors.black)),
-        color: Colors.amber[800],
-        child: Text('DECONNECTER'),
-        onPressed: () async {
-          await device.disconnect();
-          Navigator.of(context).push(MaterialPageRoute(
-              builder: (BuildContext context) => FindDevicesScreen(
-
-              )));
-
-        },
-
-      ),
-         // Image.asset('images/logo_astek.png'),
+          RaisedButton(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(7),
+                side: BorderSide(color: Colors.black)),
+            color: Colors.amber[800],
+            child: Text('DECONNECTER'),
+            onPressed: () async {
+              await device.disconnect();
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (BuildContext context) => FindDevicesScreen()));
+            },
+          ),
+          // Image.asset('images/logo_astek.png'),
         ],
         leading: Builder(
           builder: (BuildContext context) {
@@ -460,8 +378,10 @@ class _Accueil_State extends State<Accueil> {
               icon: Icon(Icons.help),
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (BuildContext context) =>
-                        Help(services : services, device: device, title: "Page d'aide")));
+                    builder: (BuildContext context) => Help(
+                        services: services,
+                        device: device,
+                        title: "Page d'aide")));
               },
             );
           },
@@ -499,9 +419,6 @@ class _Accueil_State extends State<Accueil> {
                 ),
               ),
               Container(
-                ///TODO : Pour le texte, il faudra faire une changement de couleur avec le pourcentage de batterie.
-                ///On pourra peut etre utiliser Fractionnaly sized box.
-                ///Faire parler au démarrage avec le pourcentage de batterie envoyé
                 //color: Colors.green,
                 height: SizeConfig.blockSizeVertical * 10,
                 width: SizeConfig.blockSizeHorizontal * 90,
@@ -550,36 +467,35 @@ class _Accueil_State extends State<Accueil> {
                     ),
                     onPressed: () {
                       Navigator.of(context).push(MaterialPageRoute(
-                          builder: (BuildContext context) =>
-                              Settings(title: "Paramètres", volume: volume, pitch: pitch, rate: rate, services: services,device: device,)));
+                          builder: (BuildContext context) => Settings(
+                                title: "Paramètres",
+                                volume: volume,
+                                pitch: pitch,
+                                rate: rate,
+                                services: services,
+                                device: device,
+                              )));
                     },
                   ),
                 ),
               ),
-
               ButtonTheme(
                 height: SizeConfig.blockSizeVertical * 10,
                 minWidth: SizeConfig.blockSizeHorizontal * 90,
-
-                child:
-                                RaisedButton(
+                child: RaisedButton(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                       side: BorderSide(color: Colors.black)),
                   onPressed: () {
-                    if(BluetoothDeviceState.disconnected == true){
-                        Navigator.of(context).push(MaterialPageRoute(
-                        builder: (BuildContext context) => FindDevicesScreen(
-
-                        )));
-    }
-                      else{
-                        _showSnackBar(context,"Vous etes déja connecté, veuillez vous déconnecter d'abord");
+                    if (BluetoothDeviceState.disconnected == true) {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (BuildContext context) =>
+                              FindDevicesScreen()));
+                    } else {
+                      _showSnackBar(context,
+                          "Vous etes déja connecté, veuillez vous déconnecter d'abord");
                     }
-                    },
-
-
-
+                  },
                   child: Text(
                     "Apparairage récepteur",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
@@ -596,7 +512,8 @@ class _Accueil_State extends State<Accueil> {
   }
 
   void _showSnackBar(BuildContext context, String message) {
-    final snackBar = SnackBar(content: Text(message),
+    final snackBar = SnackBar(
+      content: Text(message),
     );
     _scaffoldKey.currentState.showSnackBar(snackBar);
   }
