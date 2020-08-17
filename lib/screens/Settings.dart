@@ -56,7 +56,7 @@ class _Settings_State extends State<Settings>{
   var time_for_diff;
   var formatedTime;
   String timeString;
-  var nb_days='12';
+  var nb_days='12'; //Délai de MAJ AUTO initial
 
   var _scaffoldKey = new GlobalKey<ScaffoldState>();
 
@@ -128,6 +128,7 @@ class _Settings_State extends State<Settings>{
 
   }
  //Permet d'utiliser les hauts parleurs pour le Text-To-Speech
+ //Utiliser la fonction Onchange pour envoyer une string particulière.
   Future _speak() async {
     print("Val volume : $volume, rate : $rate pitch : $pitch");
     await flutterTts.setVolume(volume);
@@ -163,18 +164,24 @@ class _Settings_State extends State<Settings>{
   }
 
   //Conversion du contenu du CSV en une liste d'aliments
+  //Nous utilisons ici différents filtres afin de ne pas surcharger la BDD avec des aliments qui ne seront pas utilisés 
+  //Par ex : Les aliments de Grande Bretagne ou des States
+  ///Cependant, nous pourrons ajouter une option ou télécharger les différents codes barres en fonction du pays dans lequel 
+  ///nous nous trouvons.
   Future<List<Aliment>> convertListToAlim() async {
     int datacount = data.length;
     List<Aliment> newfoodList = List<Aliment>();
 
     for (int i = 1; i < datacount; i++) {
-      //print("code : ${data[i][0]} nom : ${data[i][1]}");
+      ///Le fichier csv a été modifié avec python en utilisant Pandas, le code devrait être disponible sur Sharepoint
+      ///Il n'est pas optmisé et nécéssite un post traitement sur Excel malheureusement
+      ///(Pandas ajoute une colonne de nombre qu'il auto-incrémente lorsqu'il fait son traitement ...)
       if(data[i][1] is String && data[i][1] != "" && data[i][2].contains("France")){
         aliment = Aliment(data[i][0].toString(), data[i][1]);
         newfoodList.add(aliment);
       }
       else{
-        print("Error, name not String or not French");
+        print("Error, name not String, null or not French");
       }
 
     }
@@ -188,9 +195,10 @@ class _Settings_State extends State<Settings>{
     int result = await databaseHelper
         .insertAliment(myList[i]); //On doit avoir des types aliments donc
     if (result != 0) {
-      //updateListView(); ==> Relentirai trop ke processus de faire un appel bdd a chaque fois.
-      print("Success to save bdd");
-      nb_insert++;
+
+      nb_insert++; //Peut permettre de savoir combien d'aliments on été insérés dans la BDD
+      ///Le problème est qu'il s'incrémente meme quand l'aliment est déja présent dans la BDD à cause de l'INDEX UNIQUE
+      ///sur le code barre.
     } else {
       print("Failure to save bdd");
     }
@@ -205,8 +213,7 @@ class _Settings_State extends State<Settings>{
   Future compareLists() async {
 
 
-    List<Aliment> csvFoodList =
-    await convertListToAlim(); //Liste d'aliments csv.
+    List<Aliment> csvFoodList = await convertListToAlim(); //Liste d'aliments csv.
 
     //Les contraintes "UNIQUE" permettent de ne pas insérer de doublons
     //l'INDEX permet d'accélérer la recherche de doublons
@@ -215,12 +222,14 @@ class _Settings_State extends State<Settings>{
       //print("on insère : ${csvFoodList[i].name} avec ce code : ${csvFoodList[i].code}");
 
       insertOneToDb(i, csvFoodList);
-
-
+      ///Finalement, la comparaison se fait directement avec l'index que nous avons ajouté
+      ///Lors de la création de la BDD
     }
 
     //print("We added $nb_insert elements to BDD");
-    _showSnackBar(context, "La BDD a été éditée, cliquez ici pour la voir");
+    ///On voulait ajouter nb_insert dans la snackbar pour avoir une indication sur le nombre d'éléments ajoutés
+    ///Si on remet cette snackbar, il faudra enlever celle qui est dans check auto_update (pour la condition true, pas pour l'autre !)
+    //_showSnackBar(context, "La BDD a été éditée, cliquez ici pour la voir");
     nb_insert=0;
     csvFoodList.clear();
 
@@ -267,9 +276,10 @@ class _Settings_State extends State<Settings>{
     }
     else{
       time_for_diff= DateFormat("yyyy-MM-dd hh:mm").parse("2020-07-01 12:30");
+      ///Lorsque la MAJ n'a jamais été effectuée, nous disons que la dernière mise à jour date de cette date la.
     }
 
-
+    ///Debug only
     print("valeur de langue $_currentItemSelected et de voix : $_currentVoiceSelected");
    print("Valeur de timestring : $timeString");
    print("Valeur de timefordiff : $time_for_diff");
@@ -382,6 +392,8 @@ class _Settings_State extends State<Settings>{
                         );
                       }).toList(),
                       //Les items sont sous forme de liste, on prend un tableau de String qu'on converti en liste.
+                      ///Pour l'instant, le choix de voix n'est pas possible avec l'extension T2Speech.
+                      ///Pourra être implémentée plus tard.
 
                       onChanged: (String newVoiceSelected) {
                         _onDropDownItemSelected(newVoiceSelected,1);
@@ -408,7 +420,7 @@ class _Settings_State extends State<Settings>{
                   Container(
                     width: SizeConfig.blockSizeHorizontal * 90,
                     margin: EdgeInsets.only(bottom: 30),
-                    child: _buildSliders(),
+                    child: _buildSliders(), ///Sliders pour les paramètres du T2Speech.
                   ),
 
                   Row(
@@ -430,6 +442,7 @@ class _Settings_State extends State<Settings>{
 
                             ),
                             validator: (value){
+                              ///Nous obligeons à avoir au moins 1 MAJ de la BDD par an, la condition peut être modifié ! 
                               if(value.isEmpty || int.tryParse(value) == null|| int.tryParse(value)<1 || int.tryParse(value)>365){
                                 print("Here is value $value");
                                 return 'Entrez un nombre entre 1 et 365';
@@ -468,7 +481,7 @@ class _Settings_State extends State<Settings>{
 
                               if(_updatekey.currentState.validate()){
                                 _save_to_shared('nb_days_auto_maj', nb_days);
-                                print("We savec nb days ! $nb_days");
+                                print("We saved nb days ! $nb_days");
 
                                 await _check_auto_update();
 
@@ -650,7 +663,7 @@ class _Settings_State extends State<Settings>{
       await loadAsset(); // Permet de ne pas charger en mémoire la liste csv à chaque fois
     }
 
-    compareLists();
+    compareLists(); ///Permet d'ajouter les éléments manquants à la BDD en partant du fichier CSV.
 
     setState(() {
 
@@ -661,8 +674,6 @@ class _Settings_State extends State<Settings>{
     });
     _save_to_shared('time_last_Update', timeString);
 
-    //print("timestring value : $timeString");
-
     return time;
   }
 
@@ -670,17 +681,17 @@ class _Settings_State extends State<Settings>{
   //Cette fonction se lance lorsque nous arrivons sur la page de paramètres ou
   //Lorsque nous définissons un intervalle de MAJ auto
   Future<int> _check_auto_update() async{
-    now = DateTime.now();
-    await _get_shared();
+    now = DateTime.now(); ///Récupère l'heure actuelle
+    await _get_shared(); ///Récupère la date de la dernière MAJ.
 
     var difference = now.difference(time_for_diff);
     print("Here is the diff : ${difference.inDays}");
     int diff_day = difference.inDays;
-    print("Valeur diff ; $diff_day");
-    print("nb days : $nb_days");
+
 
     if(diff_day>=int.parse(nb_days)){
       await _update_database();
+      ///Si on remet la snackbar avec le nombre d'éléments, on devra commenter celle ci !
       _showSnackBar(context, "On a fait une MAJ auto !");
       return 0;
 
@@ -705,7 +716,7 @@ class _Settings_State extends State<Settings>{
   }
 
   void _showSnackBar(BuildContext context, String message) {
-
+      //La snackbar permet un accès au contenu de la BDD
     final snackBar = SnackBar(content: Text(message),
     action: SnackBarAction(
         label : "voir BDD",

@@ -14,6 +14,12 @@ import 'Settings.dart';
 ///Verifier bon fonctionnement T2speech et recherche BDD
 ///Check pour utiliser avec écran éteint.
 ///
+///Activer le T2Speech sur toutes les pages de l'appli ?
+///
+///Récupération de la BDD via internet puis accéder en local.
+///
+///Vérifier que si tu mettes un nom, puis que tu mettes de la merde
+///Tu à bien un "null" et pas l'ancien nom !
 ///
 ///Le Streambuilder s'éxécute toujours plusieurs fois,
 ///Il donne parfois des paramètres random au T2S, mais
@@ -28,7 +34,7 @@ import 'Settings.dart';
 ///On pourra peut etre utiliser Fractionnaly sized box.
 ///Faire parler au démarrage avec le pourcentage de batterie envoyé
 
-enum TtsState { playing, stopped, paused, continued }
+enum TtsState { playing, stopped, paused, continued } //Pour le T2Speech
 
 class Accueil extends StatefulWidget {
   final double volume;
@@ -106,8 +112,7 @@ class _Accueil_State extends State<Accueil> {
     super.initState();
 
     _get_shared();
-    mylistener.addListener(changesOnName);
-
+    mylistener.addListener(changesOnName); //Permet d'écouter les changements & faire recherche dans BDD
     initTts();
     print("value volume init : $volume , $rate, $pitch");
   }
@@ -115,7 +120,6 @@ class _Accueil_State extends State<Accueil> {
   //Permet de récupérer la liste des langages disponibles
   initTts() {
     flutterTts = FlutterTts();
-
     _getLanguages();
   }
 
@@ -124,6 +128,9 @@ class _Accueil_State extends State<Accueil> {
     if (languages != null) setState(() => languages);
   }
 
+  //Récupération des shared preferences
+  //Pourra peut etre s'optimiser et garder uniquement la fonction ici car on le fait aussi dans les "Settings"
+  //C'est peut etre pas utile.
   Future<Null> _get_shared() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -147,6 +154,7 @@ class _Accueil_State extends State<Accueil> {
         "We got from shared : vol : $volume, , rate : $rate , pitch : $pitch");
   }
 
+  //Recherche occurence dans BDD
   changesOnName() async {
     if (_newcode != null) {
       await _searchproduct(_newcode);
@@ -154,11 +162,14 @@ class _Accueil_State extends State<Accueil> {
       _productname = null;
     }
 
+    //Permet d'afficher une snackbar lorsqu'on touche un produit.
+    //Le widget binding permet de construire la snackbar quand les
+    //Widgets sont build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_productname != null) {
         _scaffoldKey.currentState.showSnackBar(
           SnackBar(
-              duration: Duration(seconds: 10),
+              duration: Duration(seconds: 5),
               content: Center(
                 child: Text("Nom produit : $_productname"),
               )),
@@ -178,6 +189,7 @@ class _Accueil_State extends State<Accueil> {
   }
 
   //Permet d'utiliser les hauts parleurs du smartphone
+  //Appelé par la fonction _onChange.
   Future _speak() async {
     await flutterTts.setVolume(volume);
     await flutterTts.setSpeechRate(rate);
@@ -211,6 +223,7 @@ class _Accueil_State extends State<Accueil> {
     flutterTts.stop();
   }
 
+  ///TODO : Vérifier si ça peut pas se supprimer ça.
   List<DropdownMenuItem<String>> getLanguageDropDownMenuItems() {
     var items = List<DropdownMenuItem<String>>();
     for (dynamic type in languages) {
@@ -219,6 +232,8 @@ class _Accueil_State extends State<Accueil> {
     }
     return items;
   }
+
+  ///TODO : PAreil pour cette fonction ! 
 
   void changedLanguageDropDownItem(String selectedType) {
     setState(() {
@@ -236,18 +251,26 @@ class _Accueil_State extends State<Accueil> {
     _speak();
   }
 
-  ///Bluetooth part
+  ///Bluetooth :
 
   Future _searchproduct(String code) async {
     _productname = await databaseHelper.getOneAliment(code);
     print("We set the name to the product : $_productname");
   }
 
+
+///TODO : OU FINIT LA PARENTHESE DE CE WIDGET ??
+///
+///Cette fonction active les notifications pour les services concernés
+///De base, il y a 3 services avec la carte nRF, un seul permet de recevoir les
+///notifications, c'est celui auquel on souscrit ici.
+///La fonction ne retourne plus de boutons, car nous voulons que tout s'effectue en background
+///Elle est appelée dans la fonction _buildConnectDeviceView
   List<ButtonTheme> _buildReadWriteNotifyButton(
       BluetoothCharacteristic characteristic) {
     List<ButtonTheme> buttons = new List<ButtonTheme>();
     if (_isnotifset == false) {
-      ///Permet d'activer les notifications automatiques
+      ///Permet d'activer les notifications automatiques une seule fois pour éviter les erreurs
       ///Transfert de données automatiques entre émetteur/receveur
       if (characteristic.properties.notify) {
         characteristic.setNotifyValue(true);
@@ -259,6 +282,8 @@ class _Accueil_State extends State<Accueil> {
     return buttons;
   }
 
+  ///Cette fonction écoute le service auquel nous avons souscrit auparavant 
+  ///dans _buildReadWriteNotifyButton et traite les données.
   ListView _buildConnectDeviceView() {
     List<Container> containers = new List<Container>();
 
@@ -283,11 +308,15 @@ class _Accueil_State extends State<Accueil> {
                             value.toString() != _val) {
                           ///Permet de n'avoir l'affichage code-barre qu'une fois
                           ///Car le streambuilder recevait les données plusieurs fois d'affilées - donc affichage de plusieurs snackbars
+                          ///Le problème de cette condition est que l'on ne peut toucher 2 fois d'affilée le même produit.
+                          ///La dernière condition sera peut être à modifier
 
                           Text((() {
                             _val = value.toString();
                             var _mytab = List(50); //De 0 a 14
-                            ///La Taille de mytab peut etre à modifier (mini : 14);
+                            ///La Taille de mytab peut etre à modifier (mini : 13 car 13 chiffres + retour à la ligne );
+                            ///On pourra ajouter une condition sur la taille des données reçues (max 13 chiffres ! )
+                            ///Afin de sécuriser un peu le code.
                             String res = "";
 
                             int i = 0;
@@ -295,7 +324,7 @@ class _Accueil_State extends State<Accueil> {
                             print(value.toString());
                             if (_val.length > 2) {
                               while (value[i] != 10 && i < 14) {
-                                _mytab[i] = value[i] - 48;
+                                _mytab[i] = value[i] - 48; //Conversion ASCII Décimale (chiffres uniquement)
                                 _newcode = _newcode + _mytab[i].toString();
                                 i++;
                               }
@@ -319,7 +348,7 @@ class _Accueil_State extends State<Accueil> {
                   ),
                   Row(
                     children: <Widget>[
-                      ..._buildReadWriteNotifyButton(characteristic),
+                      ..._buildReadWriteNotifyButton(characteristic), //Ne retourne rien car s'effectue en background.
                     ],
                   ),
                   Divider(),
@@ -332,13 +361,14 @@ class _Accueil_State extends State<Accueil> {
       containers.add(
         Container(
             child: Column(
-          children: characteristicsWidget,
+          children: characteristicsWidget, 
+          //Ajoute un container vide qui sera situé en bas de l'écran, comme invisible pour l'utilisateur
         )),
       );
     }
     // }
 
-    return ListView(
+    return ListView( //Affiche le container (vide) correspondant au service auquel nous avons souscrit précédemment.
       shrinkWrap: true,
       padding: const EdgeInsets.all(8),
       children: <Widget>[
@@ -387,7 +417,7 @@ class _Accueil_State extends State<Accueil> {
           },
         ),
       ),
-      body: SingleChildScrollView(
+      body: SingleChildScrollView( ///Construction de l'interface graphique
         child: Center(
           child: Column(
             children: <Widget>[
@@ -432,7 +462,8 @@ class _Accueil_State extends State<Accueil> {
                         /// Ici on aura du rouge jusqu'a 30% de la barre.
                         )),
                 child: AutoSizeText(
-                  "Ex : 50%",
+                  "Ex : 50%", ///TODO : Il faudra surement créer un Streambuilder pour écouter périodiquement la batterie
+                  ///Restante.
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   style: TextStyle(
@@ -493,7 +524,8 @@ class _Accueil_State extends State<Accueil> {
                               FindDevicesScreen()));
                     } else {
                       _showSnackBar(context,
-                          "Vous etes déja connecté, veuillez vous déconnecter d'abord");
+                          "Vous etes déja connecté, veuillez vous déconnecter d'abord"); ///Sinon, nous pourrons cacher le bouton
+                          ///Ou le griser.
                     }
                   },
                   child: Text(
@@ -503,7 +535,7 @@ class _Accueil_State extends State<Accueil> {
                   color: Colors.grey,
                 ),
               ),
-              _buildConnectDeviceView(),
+              _buildConnectDeviceView(), ///Streambuilder qui traite les données reçues du Bluetooth
             ],
           ),
         ),

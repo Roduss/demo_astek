@@ -1,6 +1,8 @@
 
 
 //Déclaration de la classe Aliment
+//Dans le futur, il sera possible d'implémenter d'autres caractéristiques aux aliments
+//Micro-nutriments, allergies ...
 
 class Aliment {
 

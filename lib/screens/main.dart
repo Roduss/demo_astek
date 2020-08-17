@@ -7,7 +7,7 @@ import '../ble_utils/building_ble_services.dart';
 ///Page de démarrage
 
 void main() {
-  //debugPaintSizeEnabled = true;
+  debugPaintSizeEnabled = true;
   runApp(MyApp());
 }
 
@@ -83,10 +83,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
                 builder: (c, snapshot) => Column(
                   children: snapshot.data
                       .map((d) => ListTile(
-                    title: Text((() { // A placer quand la liste est crée apparemment, parce que ça s'éxécute quand je cliques sur Nordic.
-
-                      ///Le fait de mettre un navigator empeche de revenir sur la page
-                      ///de connexion, ça sera peut etre intérréssant !
+                    title: Text((() { 
                       return d.name;
                     } ())),
 
@@ -102,7 +99,8 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
                           child: Text('DECONNECTER'),
                         onPressed: () {
                         d.disconnect();
-                        FlutterBlue.instance.startScan(timeout: Duration(seconds: 2));
+                        FlutterBlue.instance.startScan(timeout: Duration(seconds: 2)); 
+                        ///Refait un scan lorsque l'on se déconnecte d'un appareil
                         },
 
                         );
@@ -128,7 +126,8 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
                         (r) => ScanResultTile(
                       result: r,
                       onTap: () async {
-                        await r.device.connect(autoConnect: true);
+                        await r.device.connect(autoConnect: true); ///Permet de se reconnecter automatiquement 
+                        ///A la carte si la connexion est perdue.
                         _services = await r.device.discoverServices();
 
                         Navigator.of(context)
@@ -189,6 +188,8 @@ class BluetoothOffScreen extends StatefulWidget {
 
 }
 
+///Page chargée lorsque le Bluetooth n'est pas activé
+
 class BluetoothOffScreenState extends State<BluetoothOffScreen>{
 
   final BluetoothState state;
@@ -208,8 +209,7 @@ class BluetoothOffScreenState extends State<BluetoothOffScreen>{
               size: 200.0,
               color: Colors.white54,
             ),
-            Text("Bluetooth non actif",
-              //'Bluetooth Adapter is ${state != null ? state.toString().substring(15) : 'not available'}.',
+            Text("Bluetooth non actif, Activez Bluetooth & GPS",
               style: Theme.of(context)
                   .primaryTextTheme
                   .subhead

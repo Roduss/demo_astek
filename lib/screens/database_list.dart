@@ -10,7 +10,8 @@ import './../db_utils/aliment.dart';
 
 import 'package:flutter_blue/flutter_blue.dart';
 
-///Permet d'afficher la liste des aliments
+///Permet d'afficher la liste des aliments dans la BDD
+///Accessible uniquement lorsqu'on arrive sur la page de settings via une snackbar.
 
 class DBList extends StatefulWidget {
   DBList({Key key, this.title, this.services, this.device}) : super(key: key);
@@ -116,9 +117,7 @@ class _DBList_State extends State<DBList> {
   }
 
   Future<void> _showDialog(int position, String message, int choix) {
-    //Probleme de context, à voir, garder le <Future> je pense
-    //Mais du coup avec le Scaffold il y a un truc qui foire, essaie de chercher l'erreur sur google, ça devrait faire ;)
-
+  
     return showDialog<void>(
         context: context,
         builder: (BuildContext context) {

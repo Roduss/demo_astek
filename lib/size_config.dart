@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
+///Permet de configurer la taille de la plupart des widgets.
+
 class SizeConfig {
   static MediaQueryData _mediaQueryData;
   static double screenWidth;

@@ -9,7 +9,7 @@ import 'package:flutter_blue/flutter_blue.dart';
 
 
 
-///Page d'aide
+///Page d'aide a aggrémenter si besoin
 ///
 class Help extends StatefulWidget {
   BluetoothDevice device;

@@ -16,7 +16,7 @@ class DatabaseHelper{
   static Database _database; //Singleton db aussi
 
   ///On déclare tous les objets maintenant
-  ///
+
 
   String alimentTable = 'alimentTable';
   String myindex="my_index";
@@ -78,7 +78,7 @@ Future<List<Map<String, dynamic>>> getAlimMapList() async{
 Future <int> insertAliment(Aliment aliment) async{
     Database db = await this.database;
     var result = await db.insert(alimentTable, aliment.toMap()); //Bien convertir en objet MAP
-  //sinon tu pourras pas l'insérer !
+  //sinon on ne pourra pas l'insérer !
   return result;
 }
 
@@ -101,16 +101,19 @@ Future<int> deleteAll() async {
 }
 
 //Fonction pour récupérer un aliment lors de la reception de code-barre 
+//On utilise une BDD indexée par code barre, donc on a qu'une seule occurence de code-barre
+//possible. On effecture donc une recherche par code barre et on retourne le résultat 
+//En string.
 
   Future<String> getOneAliment(String barcode) async { 
     String _namefound;
     var db=await this.database;
     List<Map<String,dynamic>> prodmaplist = await db.rawQuery('SELECT $colName FROM $alimentTable WHERE $colCode =$barcode');
-    int count = prodmaplist.length;
+    int count = prodmaplist.length; //Ne doit retourner qu'un seul aliment.
     List<Aliment> mylist = List<Aliment>();
 
     for(int i=0;i< count; i++){
-      mylist.add(Aliment.fromMapObject(prodmaplist[i]));
+      mylist.add(Aliment.fromMapObject(prodmaplist[i])); //On converti le résultat obtenu en objet lisible
       _namefound = mylist[i].name;
       print("name found : $_namefound");
     }
@@ -119,7 +122,7 @@ Future<int> deleteAll() async {
   }
 
 
-//Récupère nombre d'éléments
+//Récupère nombre d'éléments de la BDD
 
 Future<int> getCount() async {
     var db = await this.database;
