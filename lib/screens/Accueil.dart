@@ -11,24 +11,19 @@ import 'Help.dart';
 import 'Settings.dart';
 
 ///TODO :
-///Verifier bon fonctionnement T2speech et recherche BDD
+
 ///Check pour utiliser avec écran éteint.
-///
-///Activer le T2Speech sur toutes les pages de l'appli ?
 ///
 ///Récupération de la BDD via internet puis accéder en local.
 ///
-///Vérifier que si tu mettes un nom, puis que tu mettes de la merde
-///Tu à bien un "null" et pas l'ancien nom !
+///Utiliser l'extension pour parler en background.
 ///
 ///Le Streambuilder s'éxécute toujours plusieurs fois,
 ///Il donne parfois des paramètres random au T2S, mais
 ///Avant de parler il récupère les bons, le programme est donc fonctionnel
 ///Mais peut encore etre amélioré !
 ///
-/// Tu vas pouvoir enlever les isLoading je pense.
 ///
-/// Vérifier T2speech pour produit non trouvé
 ///
 /// Pour le texte, il faudra faire une changement de couleur avec le pourcentage de batterie.
 ///On pourra peut etre utiliser Fractionnaly sized box.
@@ -169,6 +164,7 @@ class _Accueil_State extends State<Accueil> {
       if (_productname != null) {
         _scaffoldKey.currentState.showSnackBar(
           SnackBar(
+              backgroundColor: Colors.blueGrey,
               duration: Duration(seconds: 5),
               content: Center(
                 child: Text("Nom produit : $_productname"),
@@ -177,6 +173,8 @@ class _Accueil_State extends State<Accueil> {
         _onChange(_productname);
       } else {
         _scaffoldKey.currentState.showSnackBar(SnackBar(
+          backgroundColor: Colors.blueGrey
+          ,
           duration: Duration(seconds: 5),
           content: Center(
             child: Text("produit non trouvé !"),
@@ -223,24 +221,6 @@ class _Accueil_State extends State<Accueil> {
     flutterTts.stop();
   }
 
-  ///TODO : Vérifier si ça peut pas se supprimer ça.
-  List<DropdownMenuItem<String>> getLanguageDropDownMenuItems() {
-    var items = List<DropdownMenuItem<String>>();
-    for (dynamic type in languages) {
-      items.add(
-          DropdownMenuItem(value: type as String, child: Text(type as String)));
-    }
-    return items;
-  }
-
-  ///TODO : PAreil pour cette fonction ! 
-
-  void changedLanguageDropDownItem(String selectedType) {
-    setState(() {
-      language = selectedType;
-      flutterTts.setLanguage(language);
-    });
-  }
 
   //Fonction a apeller pour utiliser Text_To_Speech
 
@@ -259,8 +239,8 @@ class _Accueil_State extends State<Accueil> {
   }
 
 
-///TODO : OU FINIT LA PARENTHESE DE CE WIDGET ??
-///
+
+
 ///Cette fonction active les notifications pour les services concernés
 ///De base, il y a 3 services avec la carte nRF, un seul permet de recevoir les
 ///notifications, c'est celui auquel on souscrit ici.
@@ -305,7 +285,8 @@ class _Accueil_State extends State<Accueil> {
                         final value = snapshot.data;
                         if (snapshot.hasData &&
                             value.toString().length > 2 &&
-                            value.toString() != _val) {
+                            value.toString() != _val)
+                        {
                           ///Permet de n'avoir l'affichage code-barre qu'une fois
                           ///Car le streambuilder recevait les données plusieurs fois d'affilées - donc affichage de plusieurs snackbars
                           ///Le problème de cette condition est que l'on ne peut toucher 2 fois d'affilée le même produit.
@@ -313,22 +294,21 @@ class _Accueil_State extends State<Accueil> {
 
                           Text((() {
                             _val = value.toString();
-                            var _mytab = List(50); //De 0 a 14
+                            var _mytab = List(14); //De 0 a 14
                             ///La Taille de mytab peut etre à modifier (mini : 13 car 13 chiffres + retour à la ligne );
-                            ///On pourra ajouter une condition sur la taille des données reçues (max 13 chiffres ! )
-                            ///Afin de sécuriser un peu le code.
+
                             String res = "";
 
                             int i = 0;
                             print("Val de la longueur de val: ${_val.length}");
                             print(value.toString());
                             if (_val.length > 2) {
-                              while (value[i] != 10 && i < 14) {
+                              while (value[i] != 10 && i < 14) { //Condition sur la taille des code-barre
                                 _mytab[i] = value[i] - 48; //Conversion ASCII Décimale (chiffres uniquement)
+
                                 _newcode = _newcode + _mytab[i].toString();
                                 i++;
                               }
-                              print("Newcode : $_newcode");
                               mylistener.notifyListeners();
                               //Permet de chercher les occurences dans la BDD quand le code barre est reçu,
                               // puis de parler.
@@ -342,6 +322,7 @@ class _Accueil_State extends State<Accueil> {
                             return res;
                           })());
                         }
+
                         return Container();
                       },
                     ),
@@ -385,7 +366,7 @@ class _Accueil_State extends State<Accueil> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          "Bonjour",
+          "Bienvenue !",
         ),
         actions: <Widget>[
           RaisedButton(

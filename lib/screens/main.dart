@@ -7,7 +7,8 @@ import '../ble_utils/building_ble_services.dart';
 ///Page de démarrage
 
 void main() {
-  debugPaintSizeEnabled = true;
+  //debugPaintSizeEnabled = true;
+
   runApp(MyApp());
 }
 
@@ -212,7 +213,7 @@ class BluetoothOffScreenState extends State<BluetoothOffScreen>{
             Text("Bluetooth non actif, Activez Bluetooth & GPS",
               style: Theme.of(context)
                   .primaryTextTheme
-                  .subhead
+                  .subtitle1
                   .copyWith(color: Colors.white),
             ),
           ],

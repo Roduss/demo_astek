@@ -3,10 +3,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import './aliment.dart';
+import 'package:flutter/material.dart';
 
 
 
 //Création des différentes fonctions utiles à la BDD
+
 
 
 class DatabaseHelper{
@@ -34,7 +36,7 @@ class DatabaseHelper{
       _databaseHelper = DatabaseHelper._createInstance();
     }
 
-  return _databaseHelper;
+    return _databaseHelper;
   }
 
   Future<Database> get database async{
@@ -44,7 +46,7 @@ class DatabaseHelper{
     return _database;
   }
 
- Future<Database> initializeDatabase() async { //On initialise maintenant
+  Future<Database> initializeDatabase() async { //On initialise maintenant
     //On récupère la db
     Directory directory = await getApplicationDocumentsDirectory();
     String path = directory.path+'aliments.db';
@@ -62,50 +64,65 @@ class DatabaseHelper{
   }
 
   ///FIN création db
-///
-/// CRUD Opération :
-/// Fetch :
+  ///
+  /// CRUD Opération :
+  /// Fetch :
 
-Future<List<Map<String, dynamic>>> getAlimMapList() async{
+  Future<List<Map<String, dynamic>>> getAlimMapList() async{
     Database db = await this.database;
     var result = await db.rawQuery('SELECT * FROM $alimentTable order by $colName ASC');
     return result;
-    //Result est un future de list of map car DB de différents styles (d'ou dynamic)
-  ///On le convertira en liste d'aliments plus tard, pour l'instant on a une liste de Map du coup.
-}
+
+  }
 
 
-Future <int> insertAliment(Aliment aliment) async{
+  Future <bool> insertAliment( List<Aliment> csvFoodList, int length) async{
     Database db = await this.database;
-    var result = await db.insert(alimentTable, aliment.toMap()); //Bien convertir en objet MAP
-  //sinon on ne pourra pas l'insérer !
-  return result;
-}
 
-Future<int> updateAliment(Aliment aliment) async{
+    db.transaction((txn) async {
+
+      Batch batch = txn.batch();
+      for(int i=0;i<length;i++){
+        batch.insert(alimentTable, csvFoodList[i].toMap()); //Bien convertir en objet MAP
+
+
+      }
+
+      await batch.commit(continueOnError: true);
+
+      print("la table à un longueur : ${alimentTable.length}");
+    });
+
+    return false ;
+    //sinon on ne pourra pas l'insérer !
+
+  }
+
+  Future<int> updateAliment(Aliment aliment) async{
     var db = await this.database;
     var result = await db.update(alimentTable, aliment.toMap(), where: '$colName = ?', whereArgs: [aliment.name]);
     return result;
-}
+  }
 
-Future<int> deleteAliment(String name) async {
+  Future<int> deleteAliment(String name) async {
     var db = await this.database;
     int result = await db.rawDelete('DELETE FROM $alimentTable WHERE $colName = ?', ['$name']);
     return result;
-}
+  }
 
-Future<int> deleteAll() async {
+  Future<int> deleteAll() async {
     var db = await this.database;
     int result = await db.rawDelete('DELETE FROM $alimentTable');
     return result;
-}
+  }
 
-//Fonction pour récupérer un aliment lors de la reception de code-barre 
+//Fonction pour récupérer un aliment lors de la reception de code-barre
 //On utilise une BDD indexée par code barre, donc on a qu'une seule occurence de code-barre
-//possible. On effecture donc une recherche par code barre et on retourne le résultat 
+//possible. On effecture donc une recherche par code barre et on retourne le résultat
 //En string.
 
-  Future<String> getOneAliment(String barcode) async { 
+
+  Future<String> getOneAliment(String barcode) async {
     String _namefound;
     var db=await this.database;
     List<Map<String,dynamic>> prodmaplist = await db.rawQuery('SELECT $colName FROM $alimentTable WHERE $colCode =$barcode');
@@ -124,16 +141,16 @@ Future<int> deleteAll() async {
 
 //Récupère nombre d'éléments de la BDD
 
-Future<int> getCount() async {
+  Future<int> getCount() async {
     var db = await this.database;
     List<Map<String, dynamic>> number = await db.rawQuery('SELECT COUNT (*) from $alimentTable');
     int result = Sqflite.firstIntValue(number);
     return result;
-}
+  }
 
 //Avec getalimentmaplist, on récupère une liste de Map, pas une liste d'Aliments !
   //On crée donc cette fonction pour récupérer cette liste de map et convertir en liste d'aliments.
-Future<List<Aliment>> getAlimentList() async{
+  Future<List<Aliment>> getAlimentList() async{
     var alimentMapList = await getAlimMapList(); //On récupère la liste de map
     int count = alimentMapList.length;
     //print("l'aliment maplist : $alimentMapList");
@@ -142,7 +159,7 @@ Future<List<Aliment>> getAlimentList() async{
     for(int i=0;i< count; i++){
       alimentList.add(Aliment.fromMapObject(alimentMapList[i]));
     }
-  return alimentList;
-}
+    return alimentList;
+  }
 
 }

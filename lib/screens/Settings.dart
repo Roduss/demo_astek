@@ -14,6 +14,8 @@ import './../db_utils/database_helper.dart';
 import './../db_utils/aliment.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:progress_dialog/progress_dialog.dart';
+
 
 
 ///Page de paramètres
@@ -29,9 +31,11 @@ class Settings extends StatefulWidget {
   final String language;
   final List<BluetoothService> services;
   final BluetoothDevice device;
+
   Settings({this.volume, this.pitch, this.rate, this.language,Key key, this.title, this.services, this.device}) : super(key: key);
 
   final String title;
+
 
   @override
   _Settings_State createState() {
@@ -42,6 +46,8 @@ class Settings extends StatefulWidget {
 class _Settings_State extends State<Settings>{
 
   //Déclaration des variables
+  ProgressDialog pr;
+
   BluetoothDevice device;
   final _updatekey = GlobalKey<FormState>();
   var _currentItemSelected = 'Français';
@@ -50,6 +56,7 @@ class _Settings_State extends State<Settings>{
   bool my_assets = false;
 
   List<BluetoothService> services;
+
 
   var now;
   var time;
@@ -77,6 +84,9 @@ class _Settings_State extends State<Settings>{
   String language;
   dynamic languages;
   int nb_insert=0;
+
+  double percentage=10.0; //De base on met 10%
+
 
   String _newVoiceText;
 
@@ -161,6 +171,8 @@ class _Settings_State extends State<Settings>{
     data = csvTable;
     my_assets = true;
     print("Assets loaded!");
+    csvTable = null;
+
   }
 
   //Conversion du contenu du CSV en une liste d'aliments
@@ -168,14 +180,11 @@ class _Settings_State extends State<Settings>{
   //Par ex : Les aliments de Grande Bretagne ou des States
   ///Cependant, nous pourrons ajouter une option ou télécharger les différents codes barres en fonction du pays dans lequel 
   ///nous nous trouvons.
-  Future<List<Aliment>> convertListToAlim() async {
+  Future<void> insertList() async {
     int datacount = data.length;
     List<Aliment> newfoodList = List<Aliment>();
 
     for (int i = 1; i < datacount; i++) {
-      ///Le fichier csv a été modifié avec python en utilisant Pandas, le code devrait être disponible sur Sharepoint
-      ///Il n'est pas optmisé et nécéssite un post traitement sur Excel malheureusement
-      ///(Pandas ajoute une colonne de nombre qu'il auto-incrémente lorsqu'il fait son traitement ...)
       if(data[i][1] is String && data[i][1] != "" && data[i][2].contains("France")){
         aliment = Aliment(data[i][0].toString(), data[i][1]);
         newfoodList.add(aliment);
@@ -185,56 +194,23 @@ class _Settings_State extends State<Settings>{
       }
 
     }
+    print("new foodlist : $newfoodList");
+    percentage = percentage+30;
+    pr.update(
+        progress: percentage, message: "Conversion faite");
 
-    return newfoodList;
-  }
+    await databaseHelper
+        .insertAliment(newfoodList,newfoodList.length);
 
-
-//Insertion d'un i-eme aliment dans la BDD
-  Future<int> insertOneToDb(int i, List<Aliment> myList) async {
-    int result = await databaseHelper
-        .insertAliment(myList[i]); //On doit avoir des types aliments donc
-    if (result != 0) {
-
-      nb_insert++; //Peut permettre de savoir combien d'aliments on été insérés dans la BDD
-      ///Le problème est qu'il s'incrémente meme quand l'aliment est déja présent dans la BDD à cause de l'INDEX UNIQUE
-      ///sur le code barre.
-    } else {
-      print("Failure to save bdd");
-    }
-    return result;
-  }
+    percentage = 99;
+    pr.update(
+        progress: percentage, message: "Finalisation ... !");
 
 
-//Comparaison de la liste avec la BDD avant insertions
-  //Nous voulions récupérer le nombre d'éléments ajoutés mais nous rencontrons encore des problèmes avec async await
-  //insertOnetoDb ne se termine jamais s'il est mis en "await", or nous avons besoin de le mettre en await pour compter le nombre d'éléments ajoutés
-
-  Future compareLists() async {
-
-
-    List<Aliment> csvFoodList = await convertListToAlim(); //Liste d'aliments csv.
-
-    //Les contraintes "UNIQUE" permettent de ne pas insérer de doublons
-    //l'INDEX permet d'accélérer la recherche de doublons
-    //Voir database_helper pour plus de détails
-    for (int i = 0; i< csvFoodList.length; i++) {
-      //print("on insère : ${csvFoodList[i].name} avec ce code : ${csvFoodList[i].code}");
-
-      insertOneToDb(i, csvFoodList);
-      ///Finalement, la comparaison se fait directement avec l'index que nous avons ajouté
-      ///Lors de la création de la BDD
-    }
-
-    //print("We added $nb_insert elements to BDD");
-    ///On voulait ajouter nb_insert dans la snackbar pour avoir une indication sur le nombre d'éléments ajoutés
-    ///Si on remet cette snackbar, il faudra enlever celle qui est dans check auto_update (pour la condition true, pas pour l'autre !)
-    //_showSnackBar(context, "La BDD a été éditée, cliquez ici pour la voir");
-    nb_insert=0;
-    csvFoodList.clear();
 
 
   }
+
 
 //Récupération shared_preferences
   Future <Null> _get_shared() async{
@@ -287,6 +263,8 @@ class _Settings_State extends State<Settings>{
    print("Valeur volume : $volume, pitch : $pitch, rate : $rate");
   }
 
+
+
   //Lorsque nous arrivons sur la page, nous vérifions s'il y a un besoin de mise à jour
   @override
   void initState() {
@@ -301,11 +279,40 @@ class _Settings_State extends State<Settings>{
   void dispose() {
     super.dispose();
     flutterTts.stop();
+
   }
 
 
   @override
   Widget build(BuildContext context) {
+
+    pr = ProgressDialog(
+      context,
+      type: ProgressDialogType.Download,
+
+      isDismissible: false,
+//      customBody: LinearProgressIndicator(
+//        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+//        backgroundColor: Colors.white,
+//      ),
+    );
+    pr.style(
+//      message: 'Downloading file...',
+      message:
+      'Chargement du fichier csv, ceci peut prendre quelques minutes ...',
+      borderRadius: 10.0,
+      backgroundColor: Colors.white,
+      elevation: 10.0,
+      insetAnimCurve: Curves.easeInOut,
+      progress: 0.0,
+      progressWidgetAlignment: Alignment.center,
+      maxProgress: 100.0,
+      progressTextStyle: TextStyle(
+          color: Colors.black, fontSize: 13.0, fontWeight: FontWeight.w400),
+      messageTextStyle: TextStyle(
+          color: Colors.black, fontSize: 19.0, fontWeight: FontWeight.w600),
+    );
+
     SizeConfig().init(context);
     return Scaffold(
         key: _scaffoldKey,
@@ -659,12 +666,23 @@ class _Settings_State extends State<Settings>{
     time = DateTime.now();
     time_for_diff=DateTime.now();
     formatedTime = DateFormat('yyyy-MM-dd kk:mm').format(time);
+    percentage = 10;
+    await pr.show();
     if(my_assets == false){
       await loadAsset(); // Permet de ne pas charger en mémoire la liste csv à chaque fois
     }
+    percentage = percentage+30;
+    pr.update(
+        progress: percentage, message: "Fichier CSV chargé !");
 
-    compareLists(); ///Permet d'ajouter les éléments manquants à la BDD en partant du fichier CSV.
+    insertList(); ///Permet d'ajouter les éléments manquants à la BDD en partant du fichier CSV.
 
+    if (pr.isShowing())
+      pr.hide().then((isHidden) {
+
+      });
+
+    _showSnackBar(context, "MAJ effectuée!");
     setState(() {
 
       timeString = formatedTime.toString();
@@ -692,7 +710,7 @@ class _Settings_State extends State<Settings>{
     if(diff_day>=int.parse(nb_days)){
       await _update_database();
       ///Si on remet la snackbar avec le nombre d'éléments, on devra commenter celle ci !
-      _showSnackBar(context, "On a fait une MAJ auto !");
+
       return 0;
 
     }
@@ -703,17 +721,6 @@ class _Settings_State extends State<Settings>{
     }
   }
 
-  updateListView() async { //Update la vue de l'interface
-    await databaseHelper.initializeDatabase();
-    List<Aliment> foodListFuture = await databaseHelper.getAlimentList();
-    this.foodList = foodListFuture;
-    this.count = foodListFuture.length;
-  print("longueur foodlist dans l'update:  ${foodListFuture.length}");
-    setState(() {
-
-    });
-
-  }
 
   void _showSnackBar(BuildContext context, String message) {
       //La snackbar permet un accès au contenu de la BDD
