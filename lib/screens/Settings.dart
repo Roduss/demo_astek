@@ -270,6 +270,7 @@ class _Settings_State extends State<Settings>{
   void initState() {
     super.initState();
     initTts();
+
     _check_auto_update();
 
     //En vérifiant l'update on récupére les shared_preferences
@@ -286,32 +287,7 @@ class _Settings_State extends State<Settings>{
   @override
   Widget build(BuildContext context) {
 
-    pr = ProgressDialog(
-      context,
-      type: ProgressDialogType.Download,
 
-      isDismissible: false,
-//      customBody: LinearProgressIndicator(
-//        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
-//        backgroundColor: Colors.white,
-//      ),
-    );
-    pr.style(
-//      message: 'Downloading file...',
-      message:
-      'Chargement du fichier csv, ceci peut prendre quelques minutes ...',
-      borderRadius: 10.0,
-      backgroundColor: Colors.white,
-      elevation: 10.0,
-      insetAnimCurve: Curves.easeInOut,
-      progress: 0.0,
-      progressWidgetAlignment: Alignment.center,
-      maxProgress: 100.0,
-      progressTextStyle: TextStyle(
-          color: Colors.black, fontSize: 13.0, fontWeight: FontWeight.w400),
-      messageTextStyle: TextStyle(
-          color: Colors.black, fontSize: 19.0, fontWeight: FontWeight.w600),
-    );
 
     SizeConfig().init(context);
     return Scaffold(
@@ -667,12 +643,38 @@ class _Settings_State extends State<Settings>{
     time_for_diff=DateTime.now();
     formatedTime = DateFormat('yyyy-MM-dd kk:mm').format(time);
     percentage = 10;
+    pr = ProgressDialog(
+      context,
+      type: ProgressDialogType.Download,
+
+      isDismissible: false,
+//      customBody: LinearProgressIndicator(
+//        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+//        backgroundColor: Colors.white,
+//      ),
+    );
+    pr.style(
+//      message: 'Downloading file...',
+      message:
+      'Chargement du fichier csv, ceci peut prendre quelques minutes ...',
+      borderRadius: 10.0,
+      backgroundColor: Colors.white,
+      elevation: 10.0,
+      insetAnimCurve: Curves.easeInOut,
+      progress: 0.0,
+      progressWidgetAlignment: Alignment.center,
+      maxProgress: 100.0,
+      progressTextStyle: TextStyle(
+          color: Colors.black, fontSize: 13.0, fontWeight: FontWeight.w400),
+      messageTextStyle: TextStyle(
+          color: Colors.black, fontSize: 19.0, fontWeight: FontWeight.w600),
+    );
     await pr.show();
     if(my_assets == false){
       await loadAsset(); // Permet de ne pas charger en mémoire la liste csv à chaque fois
     }
     percentage = percentage+30;
-    pr.update(
+    await pr.update(
         progress: percentage, message: "Fichier CSV chargé !");
 
     insertList(); ///Permet d'ajouter les éléments manquants à la BDD en partant du fichier CSV.

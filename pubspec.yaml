@@ -30,6 +30,7 @@ dependencies:
   flutter_tts: ^1.2.6
   flutter_blue: ^0.7.2
   progress_dialog: ^1.2.4
+  audio_service: ^0.13.0
   flutter:
     sdk: flutter
 

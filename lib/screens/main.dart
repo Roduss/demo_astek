@@ -3,6 +3,7 @@ import 'Accueil.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import '../ble_utils/building_ble_services.dart';
+import 'package:audio_service/audio_service.dart';
 
 ///Page de démarrage
 
@@ -21,16 +22,17 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: StreamBuilder<BluetoothState>(
-          stream: FlutterBlue.instance.state,
-          initialData: BluetoothState.unknown,
-          builder: (c, snapshot) {
-            final state = snapshot.data;
-            if (state == BluetoothState.on) {
-              return FindDevicesScreen();
-            }
-            return BluetoothOffScreen(state); //Page quand le bluetooth est désactivé
-          }),
+      home: AudioServiceWidget(
+          child :StreamBuilder<BluetoothState>(
+              stream: FlutterBlue.instance.state,
+              initialData: BluetoothState.unknown,
+              builder: (c, snapshot) {
+                final state = snapshot.data;
+                if (state == BluetoothState.on) {
+                  return FindDevicesScreen();
+                }
+                return BluetoothOffScreen(state); //Page quand le bluetooth est désactivé
+              }),)
     );
   }
 }
@@ -135,7 +137,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen>{
                           .push(MaterialPageRoute(builder: (context) {
 
 
-                          return Accueil(device : r.device, characteristic: characteristic,services: _services,);
+                          return AudioServiceWidget(child : Accueil(device : r.device, characteristic: characteristic,services: _services,) );
 
                       }));
 

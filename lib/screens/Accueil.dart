@@ -1,3 +1,4 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'main.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Help.dart';
 import 'Settings.dart';
+import './../audio_background.dart';
 
 ///TODO :
 
@@ -58,6 +60,7 @@ class Accueil extends StatefulWidget {
   }
 }
 
+
 class _Accueil_State extends State<Accueil> {
   //Déclaration des variables
   BluetoothDevice device;
@@ -83,6 +86,8 @@ class _Accueil_State extends State<Accueil> {
 
   DatabaseHelper databaseHelper = DatabaseHelper();
 
+  BackgroundAudioTask Myplayer = TextPlayerTask ();
+
   String _newVoiceText;
 
   TtsState ttsState = TtsState.stopped;
@@ -106,11 +111,14 @@ class _Accueil_State extends State<Accueil> {
   initState() {
     super.initState();
 
+
     _get_shared();
     mylistener.addListener(changesOnName); //Permet d'écouter les changements & faire recherche dans BDD
     initTts();
     print("value volume init : $volume , $rate, $pitch");
   }
+
+
 
   //Permet de récupérer la liste des langages disponibles
   initTts() {
@@ -197,8 +205,10 @@ class _Accueil_State extends State<Accueil> {
       if (_newVoiceText.isNotEmpty) {
         var result = await flutterTts.speak(_newVoiceText);
         if (result == 1) setState(() => ttsState = TtsState.playing);
+
       }
     }
+
   }
 
   //Stop l'élocution
